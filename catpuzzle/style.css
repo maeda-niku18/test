@@ -1,96 +1,166 @@
 body {
-    font-family: sans-serif;
-    background-color: #f0f0f0;
+    font-family: 'Hiragino Kaku Gothic Pro', 'ヒラギノ角ゴ Pro W3', 'Meiryo', 'メイリオ', sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    color: #333;
+    line-height: 1.6;
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
+    padding: 20px;
     margin: 0;
 }
 
 .container {
+    max-width: 90vw;
+    width: 500px; /* Adjust width as needed */
+    margin: 0 auto;
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
     text-align: center;
+}
+
+h1 {
+    color: #4a5568;
+    margin-bottom: 10px;
+    font-size: 2.2rem;
+}
+
+p {
+    color: #718096;
+    margin-bottom: 20px;
 }
 
 #puzzle-container {
     display: grid;
-    border: 2px solid #333;
+    border: 3px solid #667eea;
     margin: 20px auto;
     padding: 0;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
     /* Size will be set by JS */
 }
 
 .puzzle-piece {
     /* Size will be set by JS */
-    border: 1px solid #ccc;
-    background-size: 100% 100%; /* Changed for dynamic sizing */
+    background-size: cover; /* Use cover for better fitting */
     cursor: pointer;
-    transition: transform 0.2s;
+    transition: all 0.3s ease;
+    border: 1px solid #fff;
 }
 
 .puzzle-piece:hover {
-    transform: scale(1.05);
+    transform: scale(0.95);
+    opacity: 0.8;
 }
 
 .empty-piece {
-    background-image: none;
-    background-color: #fff;
+    background: #e2e8f0;
     cursor: default;
+}
+
+.empty-piece:hover {
+    transform: none;
+    opacity: 1;
 }
 
 .controls {
     margin-top: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
 }
 
 #start-button, #back-button, #download-button {
-    padding: 10px 20px;
-    font-size: 16px;
+    padding: 12px 25px;
+    font-size: 1rem;
+    font-weight: 600;
     cursor: pointer;
-    margin: 5px;
+    border: none;
+    border-radius: 25px;
+    color: white;
+    transition: all 0.3s ease;
+}
+
+#start-button {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+#start-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+#download-button {
+    background: #48bb78;
+}
+
+#download-button:hover {
+    background: #38a169;
 }
 
 #download-button:disabled {
     cursor: not-allowed;
     opacity: 0.6;
+    transform: none;
+}
+
+#back-button {
+    background: #a0aec0;
+}
+
+#back-button:hover {
+    background: #718096;
 }
 
 #message {
     margin-top: 20px;
-    font-size: 18px;
-    color: green;
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #48bb78;
+    min-height: 25px;
 }
 
 /* Modal Styles */
 .modal {
     display: none; 
     position: fixed; 
-    z-index: 1; 
+    z-index: 100;
     left: 0;
     top: 0;
     width: 100%;
     height: 100%;
     overflow: auto; 
-    background-color: rgba(0,0,0,0.6); 
+    background-color: rgba(0,0,0,0.7);
 }
 
 .modal-content {
     background-color: #fefefe;
     margin: 10% auto;
-    padding: 20px;
+    padding: 25px;
     border: 1px solid #888;
-    width: 80%;
-    max-width: 600px;
+    width: 90%;
+    max-width: 500px;
     text-align: center;
-    border-radius: 10px;
+    border-radius: 15px;
     position: relative;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+.modal-content h2 {
+    color: #667eea;
+    margin-bottom: 15px;
 }
 
 .close-button {
     color: #aaa;
     position: absolute;
-    top: 10px;
-    right: 20px;
-    font-size: 28px;
+    top: 15px;
+    right: 25px;
+    font-size: 32px;
     font-weight: bold;
 }
 
@@ -105,4 +175,6 @@ body {
     max-width: 100%;
     height: auto;
     margin-top: 15px;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
 }

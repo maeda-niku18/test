@@ -109,17 +109,36 @@ function calculateResult(answers) {
 // 結果の表示
 function displayResult(result) {
     const resultHtml = `
-        <div class="result-type">${result.title}</div>
-        <div class="result-description">${result.description}</div>
-        <div class="result-traits">
-            <h4>あなたの特徴：</h4>
-            <ul>
-                ${result.traits.map(trait => `<li>${trait}</li>`).join('')}
-            </ul>
+        <div class="result-header">
+            <div class="result-icon">✨</div>
+            <h3 class="result-title">${result.title}</h3>
         </div>
-        <p style="color: #718096; font-size: 0.9rem; margin-top: 20px; font-style: italic;">
-            ※この診断結果は、あなたの回答に基づいて作成されています。性格は多面的で複雑なものです。
-        </p>
+        
+        <div class="result-main">
+            <div class="result-description">
+                <h4>あなたの性格タイプ</h4>
+                <div class="description-text">${result.description}</div>
+            </div>
+            
+            <div class="result-traits">
+                <h4>あなたの特徴的な性質</h4>
+                <div class="traits-grid">
+                    ${result.traits.map((trait, index) => `
+                        <div class="trait-card">
+                            <div class="trait-number">${index + 1}</div>
+                            <div class="trait-text">${trait}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        </div>
+        
+        <div class="result-footer">
+            <div class="result-note">
+                <p>💡 <strong>この診断について</strong></p>
+                <p>この結果は、あなたの回答パターンに基づいて作成されています。性格は多面的で複雑なものですので、一つの診断結果で全てを表すことはできません。日々の生活や環境によって、異なる側面が表れることもあります。</p>
+            </div>
+        </div>
     `;
     
     resultContent.innerHTML = resultHtml;
