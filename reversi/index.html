@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>4人対戦リバーシ</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎉 4人対戦リバーシ 🎉</h1>
+            <div class="game-info">
+                <div class="current-player-info">
+                    <span id="current-player-text">現在のプレイヤー:</span>
+                    <div id="current-player-piece" class="piece black"></div>
+                    <span id="current-player-name">黒プレイヤー</span>
+                </div>
+                <button id="reset-btn" class="btn">ゲームリセット</button>
+                <button id="back-btn" class="btn">メニューに戻る</button>
+            </div>
+        </div>
+
+        <div class="game-board">
+            <div id="board" class="board"></div>
+        </div>
+
+        <div class="score-panel">
+            <div class="player-score black-player">
+                <div class="player-icon">
+                    <div class="piece black"></div>
+                    <span>黒</span>
+                </div>
+                <div class="score" id="black-score">2</div>
+            </div>
+            <div class="player-score white-player">
+                <div class="player-icon">
+                    <div class="piece white"></div>
+                    <span>白</span>
+                </div>
+                <div class="score" id="white-score">2</div>
+            </div>
+            <div class="player-score red-player">
+                <div class="player-icon">
+                    <div class="piece red"></div>
+                    <span>赤</span>
+                </div>
+                <div class="score" id="red-score">2</div>
+            </div>
+            <div class="player-score blue-player">
+                <div class="player-icon">
+                    <div class="piece blue"></div>
+                    <span>青</span>
+                </div>
+                <div class="score" id="blue-score">2</div>
+            </div>
+        </div>
+
+        <div class="rules">
+            <h3>📝 ルール</h3>
+            <ul>
+                <li>4人が順番に駒を置きます（黒→白→赤→青）</li>
+                <li>相手の駒を挟むと、挟まれた駒は自分の色になります</li>
+                <li>置ける場所がない場合はパスとなり、次のプレイヤーのターンになります</li>
+                <li>全員がパスまたはボードが埋まるとゲーム終了</li>
+                <li>最も多くの駒を持つプレイヤーの勝利です！</li>
+            </ul>
+        </div>
+
+        <div id="game-over-modal" class="modal hidden">
+            <div class="modal-content">
+                <h2>🎊 ゲーム終了！ 🎊</h2>
+                <div id="final-scores"></div>
+                <div id="winner-announcement"></div>
+                <div class="modal-buttons">
+                    <button id="new-game-btn" class="btn">新しいゲーム</button>
+                    <button id="close-modal-btn" class="btn">閉じる</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
