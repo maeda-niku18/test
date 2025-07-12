@@ -104,8 +104,11 @@ document.addEventListener('DOMContentLoaded', () => {
             wLevelContainer.className = 'w-level';
             const wTitle = document.createElement('h2');
             wTitle.className = 'w-level-title';
-            wTitle.textContent = `W = ${w}`;
+            wTitle.textContent = `次元 ${w + 1}`;
             wLevelContainer.appendChild(wTitle);
+
+            const wLevelContent = document.createElement('div');
+            wLevelContent.className = 'w-level-content';
 
             for (let z = 0; z < boardSize; z++) {
                 const zLevelContainer = document.createElement('div');
@@ -115,10 +118,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 zTitle.textContent = `Z = ${z}`;
                 zLevelContainer.appendChild(zTitle);
 
-                const grid = document.createElement('div');
-                grid.className = 'board-grid';
+                const yGridsContainer = document.createElement('div');
+                yGridsContainer.className = 'y-grids-container'; // New container for y-grids
 
                 for (let y = 0; y < boardSize; y++) {
+                    const grid = document.createElement('div');
+                    grid.className = 'board-grid';
+
                     for (let x = 0; x < boardSize; x++) {
                         const cell = document.createElement('div');
                         cell.className = 'cell';
@@ -131,17 +137,22 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (pieceData) {
                             const pieceElement = document.createElement('div');
                             pieceElement.className = `piece player${pieceData.owner}`;
-                            pieceElement.textContent = pieceData.name;
+                            const pieceNameElement = document.createElement('span');
+                            pieceNameElement.className = 'piece-name';
+                            pieceNameElement.textContent = pieceData.name;
+                            pieceElement.appendChild(pieceNameElement);
                             cell.appendChild(pieceElement);
                         }
                         
                         cell.addEventListener('click', () => handleCellClick(w, z, y, x));
                         grid.appendChild(cell);
                     }
+                    yGridsContainer.appendChild(grid);
                 }
-                zLevelContainer.appendChild(grid);
-                wLevelContainer.appendChild(zLevelContainer);
+                zLevelContainer.appendChild(yGridsContainer);
+                wLevelContent.appendChild(zLevelContainer);
             }
+            wLevelContainer.appendChild(wLevelContent);
             boardElement.appendChild(wLevelContainer);
         }
     }
@@ -242,11 +253,146 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // 駒の移動ルール (ステップ1では無効化)
+    // 駒の移動ルール
     function isValidMove(fromW, fromZ, fromY, fromX, toW, toZ, toY, toX) {
-        // ステップ1では配置のみを実装するため、駒はまだ動かせません。
-        // 次のステップで駒の動きを実装します。
-        return false;
+        const piece = board[fromW][fromZ][fromY][fromX];
+        if (!piece) return false;
+
+        const targetPiece = board[toW][toZ][toY][toX];
+        if (targetPiece && targetPiece.owner === currentPlayer) {
+            return false; // 自分の駒がいる場所へは移動できない
+        }
+
+        const dw = toW - fromW;
+        const dz = toZ - fromZ;
+        const dy = toY - fromY;
+        const dx = toX - fromX;
+
+        const adw = Math.abs(dw);
+        const adz = Math.abs(dz);
+        const ady = Math.abs(dy);
+        const adx = Math.abs(dx);
+
+        if (adw === 0 && adz === 0 && ady === 0 && adx === 0) {
+            return false; // 同じ場所への移動は無効
+        }
+
+        const p_dir = currentPlayer === 1 ? 1 : -1; // プレイヤーの前方方向
+
+        switch (piece.name) {
+            case '歩':
+                // 二次元(y,x)または三次元(w)に対して正または負の方向に1マスのみ
+                if (dz !== 0) return false; // z軸方向の移動は不可
+                const adw_plus_ady_plus_adx = adw + ady + adx;
+                if (adw_plus_ady_plus_adx !== 1) return false;
+                // プレイヤーによる方向制限
+                if (dw * p_dir < 0 || dy * p_dir < 0) return false;
+                return true;
+
+            case '香':
+                // 二次元(y,x)または三次元(w)に対して直線で何マスでも
+                if (dz !== 0) return false; // z軸方向の移動は不可
+                const moveAxisCount = [adw, ady, adx].filter(v => v > 0).length;
+                if (moveAxisCount !== 1) return false; // 1つの軸のみ
+                // プレイヤーによる方向制限
+                if (dw * p_dir < 0 || dy * p_dir < 0) return false;
+                return isPathClear(fromW, fromZ, fromY, fromX, toW, toZ, toY, toX);
+
+            case '桂':
+                // 次元方向に対して二次元+四次元や三次元+二次元といったトリッキーな移動
+                // (w, z) の移動と (y, x) の移動の組み合わせと解釈
+                const dimMove = (adw === 2 && adz === 1) || (adw === 1 && adz === 2);
+                const planeMove = (ady === 2 && adx === 1) || (ady === 1 && adx === 2);
+                if (!dimMove && !planeMove) return false;
+                if (dimMove && (ady !== 0 || adx !== 0)) return false; // 次元移動中は平面移動不可
+                if (planeMove && (adw !== 0 || adz !== 0)) return false; // 平面移動中は次元移動不可
+                return true;
+
+            case '銀':
+                // 各次元を1マスとしてみたときに銀の動き or 二次元空間でも銀の動き
+                if (fromY === toY && fromX === toX) { // 次元移動
+                    const validMoves = [[0, 1*p_dir], [1, 1*p_dir], [-1, 1*p_dir], [1, -1*p_dir], [-1, -1*p_dir]];
+                    return validMoves.some(m => m[0] === dz && m[1] === dw * p_dir);
+                } else if (fromW === toW && fromZ === toZ) { // 平面移動
+                    const validMoves = [[0, 1*p_dir], [1, 1*p_dir], [-1, 1*p_dir], [1, -1*p_dir], [-1, -1*p_dir]];
+                    return validMoves.some(m => m[0] === dx && m[1] === dy * p_dir);
+                }
+                return false;
+
+            case '金':
+                 // 各次元を1マスとしてみたときに金の動き or 二次元空間でも金の動き
+                if (fromY === toY && fromX === toX) { // 次元移動
+                    const validMoves = [[0, 1*p_dir], [1, 0], [-1, 0], [0, -1], [1, 1*p_dir], [-1, 1*p_dir]];
+                    return validMoves.some(m => m[0] === dz && m[1] === dw * p_dir);
+                } else if (fromW === toW && fromZ === toZ) { // 平面移動
+                    const validMoves = [[0, 1*p_dir], [1, 0], [-1, 0], [0, -1], [1, 1*p_dir], [-1, 1*p_dir]];
+                    return validMoves.some(m => m[0] === dx && m[1] === dy * p_dir);
+                }
+                return false;
+
+            case '角':
+                // 各次元を1マスとしてみて角の動き or 二次元空間内でも同様に移動
+                if (fromY === toY && fromX === toX) { // 次元移動
+                    if (adw === adz && adw > 0) {
+                        return isPathClear(fromW, fromZ, fromY, fromX, toW, toZ, toY, toX);
+                    }
+                } else if (fromW === toW && fromZ === toZ) { // 平面移動
+                    if (ady === adx && ady > 0) {
+                        return isPathClear(fromW, fromZ, fromY, fromX, toW, toZ, toY, toX);
+                    }
+                }
+                return false;
+
+            case '飛':
+                // 各次元を1マスとしてみて飛車の動き or 二次元空間内でも同様に移動
+                if (fromY === toY && fromX === toX) { // 次元移動
+                    if ((adw > 0 && adz === 0) || (adw === 0 && adz > 0)) {
+                        return isPathClear(fromW, fromZ, fromY, fromX, toW, toZ, toY, toX);
+                    }
+                } else if (fromW === toW && fromZ === toZ) { // 平面移動
+                    if ((ady > 0 && adx === 0) || (ady === 0 && adx > 0)) {
+                        return isPathClear(fromW, fromZ, fromY, fromX, toW, toZ, toY, toX);
+                    }
+                }
+                return false;
+
+            case '王':
+            case '玉':
+                // 二次元空間で王の動き or 各次元を1マスとしてみて次元を渡る
+                if (fromY === toY && fromX === toX) { // 次元移動
+                    return adw <= 1 && adz <= 1;
+                } else if (fromW === toW && fromZ === toZ) { // 平面移動
+                    return ady <= 1 && adx <= 1;
+                }
+                return false;
+
+            default:
+                return false;
+        }
+    }
+
+    // 経路に駒がないかチェックするヘルパー関数
+    function isPathClear(fromW, fromZ, fromY, fromX, toW, toZ, toY, toX) {
+        const stepW = Math.sign(toW - fromW);
+        const stepZ = Math.sign(toZ - fromZ);
+        const stepY = Math.sign(toY - fromY);
+        const stepX = Math.sign(toX - fromX);
+
+        let w = fromW + stepW;
+        let z = fromZ + stepZ;
+        let y = fromY + stepY;
+        let x = fromX + stepX;
+
+        while (w !== toW || z !== toZ || y !== toY || x !== toX) {
+            if (board[w][z][y][x]) {
+                return false; // 経路がブロックされている
+            }
+            w += stepW;
+            z += stepZ;
+            y += stepY;
+            x += stepX;
+        }
+        return true; // 経路はクリア
     }
 
     initializeGame();

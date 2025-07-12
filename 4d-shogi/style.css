@@ -55,6 +55,7 @@ header p {
 
 #game-board {
     display: flex;
+    flex-direction: row; /* W軸を横に並べる */
     flex-wrap: wrap;
     gap: 30px;
     justify-content: center;
@@ -62,25 +63,44 @@ header p {
 }
 
 .w-level {
+    display: flex;
+    flex-direction: column; /* Wレベル内の要素を縦に並べる */
+    align-items: center;
     border: 3px solid var(--player1-color);
     border-radius: 15px;
-    padding: 15px;
+    padding: 5px; /* パディングを減らす */
     background-color: rgba(15, 52, 96, 0.2);
 }
 
+.w-level-content {
+    display: flex;
+    flex-direction: row; /* Zレベルを横に並べる */
+    gap: 5px; /* Zレベル間のスペースを減らす */
+}
+
+
+
 .w-level-title {
     font-size: 1.5rem;
-    margin-bottom: 15px;
+    margin-bottom: 0;
     text-shadow: 0 0 8px var(--player1-color);
 }
 
 .z-level {
+    display: flex;
+    flex-direction: row; /* Yレベルを横に並べる */
+    align-items: center;
     border: 2px solid var(--glow-color);
     border-radius: 10px;
-    padding: 10px;
+    padding: 5px;
     background-color: var(--board-bg);
     box-shadow: 0 0 20px rgba(233, 69, 96, 0.2);
-    margin-bottom: 15px;
+}
+
+.y-grids-container {
+    display: flex;
+    flex-direction: column; /* Y軸を縦に並べる */
+    gap: 0; /* Yレベル間のスペースをさらに減らす */
 }
 
 .z-level:last-child {
@@ -89,8 +109,17 @@ header p {
 
 .z-level-title {
     font-size: 1.2rem;
-    margin-bottom: 10px;
+    margin-bottom: 0;
     text-shadow: 0 0 5px var(--glow-color);
+}
+
+/* Remove previous y-level styles */
+.y-level {
+    /* No specific styles needed here as it's now a container for z-levels */
+}
+
+.y-level-title {
+    /* No specific styles needed here */
 }
 
 .board-grid {
@@ -130,6 +159,18 @@ header p {
 
 .piece:hover {
     transform: scale(1.1);
+}
+
+.player1 {
+    color: var(--player1-color);
+}
+
+.player1 .piece-name {
+    transform: rotate(180deg);
+}
+
+.player2 .piece-name {
+    transform: rotate(180deg);
 }
 
 .player1 {

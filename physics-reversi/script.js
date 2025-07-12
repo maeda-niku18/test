@@ -11,16 +11,18 @@ let settleStartTime = 0;
 let fallingPieces = 0;
 let turnInProgress = false; // ターン処理中フラグ
 let lastDroppedPiece = null; // 最後に落としたコマ
+let judgmentStartTime = null; // 判定開始時間
 
 // ゲーム設定
 const BOARD_WIDTH = 800;
 const BOARD_HEIGHT = 600;
-const PIECE_RADIUS = 30;
+const PIECE_RADIUS = 50;
 const COLUMNS = 8;
-const GROUND_HEIGHT = 20;
-const WALL_WIDTH = 20;
+const GROUND_HEIGHT = 60;
+const WALL_WIDTH = 60;
 const DROP_HEIGHT = 50;
 const SETTLE_TIME = 3000; // 3秒間安定で判定
+
 
 // プレイヤー設定
 const PLAYERS = [
@@ -52,8 +54,8 @@ function initPhysics() {
     engine = Engine.create();
     world = engine.world;
     
-    // 重力設定
-    engine.world.gravity.y = 0.8;
+    // 重力設定（弱くして安定性向上）
+    engine.world.gravity.y = 0.4;
     
     // レンダラー作成
     render = Render.create({
@@ -131,9 +133,9 @@ function createInitialPieces() {
 // コマ作成
 function createPiece(x, y, player) {
     const piece = Bodies.circle(x, y, PIECE_RADIUS, {
-        restitution: 0.6, // 弾性
+        restitution: 0.6, // 弾性（固定値）
         friction: 0.1,
-        density: 0.001,
+        density: 1.0, // 落下中は重い
         render: {
             fillStyle: PLAYERS[player].color,
             strokeStyle: player === 0 ? '#fff' : '#000',
@@ -176,17 +178,14 @@ function handlePhysicsUpdate() {
         piece.lastPosition = { x: piece.body.position.x, y: piece.body.position.y };
     });
     
-    // 安定性チェック
-    if (hasMovingPieces && isStable) {
-        isStable = false;
-        settleStartTime = Date.now();
-        statusMessage.textContent = 'コマが動いています...';
-    } else if (!hasMovingPieces && !isStable && turnInProgress) {
-        if (Date.now() - settleStartTime >= SETTLE_TIME) {
-            isStable = true;
-            checkForFlips();
-            statusMessage.textContent = 'コマが安定しました。判定中...';
+    // 安定性チェック（ターン処理中のみ）
+    if (turnInProgress) {
+        if (hasMovingPieces && isStable) {
+            isStable = false;
+            settleStartTime = Date.now();
+            statusMessage.textContent = 'コマが動いています...';
         }
+        // 安定性の判定はcheckWhenStoppedに任せる
     }
     
     // UI更新
@@ -196,6 +195,33 @@ function handlePhysicsUpdate() {
 }
 
 // ドロップスロットクリック
+// X座標を指定してコマを落とす（無段階）
+function handleDropAtPosition(x) {
+    if (gameOver || turnInProgress) return;
+    
+    // 画面端から少し離れた位置に制限
+    const minX = WALL_WIDTH + PIECE_RADIUS;
+    const maxX = BOARD_WIDTH - WALL_WIDTH - PIECE_RADIUS;
+    const dropX = Math.max(minX, Math.min(maxX, x));
+    
+    turnInProgress = true;
+    isStable = false;
+    settleStartTime = Date.now();
+    
+    const piece = createPiece(dropX, DROP_HEIGHT, currentPlayer);
+    
+    
+    lastDroppedPiece = piece;
+    gameBoard.push(piece);
+    World.add(world, piece);
+    
+    statusMessage.textContent = `${PLAYERS[currentPlayer].name}のコマが落下中...`;
+    updateUI();
+    updateScore();
+    
+    checkWhenStopped();
+}
+
 function handleDrop(column) {
     if (turnInProgress || gameOver || !isStable) return;
     
@@ -213,76 +239,106 @@ function handleDrop(column) {
     
     statusMessage.textContent = `${PLAYERS[currentPlayer].name}のコマが落下中...`;
     
-    // 落としたコマが停止したタイミングで判定実行
-    function checkWhenStopped() {
-        setTimeout(() => {
-            const allPieces = world.bodies.filter(body => body.isGamePiece);
-            const lastPiece = allPieces[allPieces.length - 1];
-            
-            if (!lastPiece) return;
-            
-            const velocity = Math.abs(lastPiece.velocity.x) + Math.abs(lastPiece.velocity.y);
-            
-            if (velocity <= 0.1) {
+    checkWhenStopped();
+}
+
+// コマ停止判定とフリップ処理
+function checkWhenStopped() {
+    setTimeout(() => {
+        const allPieces = world.bodies.filter(body => body.isGamePiece);
+        const lastPiece = allPieces[allPieces.length - 1];
+        
+        if (!lastPiece) return;
+        
+        const velocity = Math.abs(lastPiece.velocity.x) + Math.abs(lastPiece.velocity.y);
+        
+        // 安定時間チェック（3秒経ったら強制判定）
+        const stableTime = Date.now() - settleStartTime;
+        const isStableTimeout = stableTime >= 3000;
+        
+        if (velocity <= 0.5 || isStableTimeout) {
+            if (isStableTimeout) {
+                console.log('⏰ 安定時間タイムアウト - 強制判定実行');
+                // コマを強制停止
+                Body.setVelocity(lastPiece, { x: 0, y: 0 });
+            }
+            // 初回のみ判定開始時間を設定
+            if (!judgmentStartTime) {
+                judgmentStartTime = Date.now();
+                statusMessage.textContent = 'コマが安定しました。判定中...';
                 console.log('=== コマ停止後の判定実行 ===');
                 console.log(`停止したコマ: プレイヤー${lastPiece.player}, 位置(${lastPiece.position.x.toFixed(1)}, ${lastPiece.position.y.toFixed(1)}), 速度${velocity.toFixed(3)}`);
                 
-                // 最初の隣接コマ取得（落としたコマから半径130）
-                const INITIAL_SEARCH_RADIUS = 250;
-                const nearbyPieces = allPieces.filter(piece => {
-                    if (piece === lastPiece) return false;
-                    
-                    const distance = Math.sqrt(
-                        Math.pow(piece.position.x - lastPiece.position.x, 2) + 
-                        Math.pow(piece.position.y - lastPiece.position.y, 2)
-                    );
-                    
-                    return distance <= INITIAL_SEARCH_RADIUS;
+                // 判定開始時に全ての既存コマを軽くする
+                allPieces.forEach(piece => {
+                    Body.set(piece, 'density', 0.1);
+                    Body.setMass(piece, piece.area * 0.1);
                 });
-                
-                console.log(`周囲のコマ数: ${nearbyPieces.length}`);
-                
-                // 各コマから直線判定
-                let allFlips = [];
-                nearbyPieces.forEach((startPiece, index) => {
-                    console.log(`\n--- 探索${index + 1} ---`);
-                    const lineFlips = debugLineSearch(lastPiece, startPiece, allPieces);
-                    allFlips.push(...lineFlips);
-                });
-                
-                // 重複削除
-                const uniqueFlips = [...new Set(allFlips)];
-                console.log(`\n💫 総フリップ数: ${uniqueFlips.length}`);
-                
-                // 実際にフリップ実行
-                if (uniqueFlips.length > 0) {
-                    console.log('🔄 フリップ実行中...');
-                    uniqueFlips.forEach(piece => {
-                        flipPieceBody(piece);
-                        console.log(`   ${piece.player === 0 ? '白→黒' : '黒→白'} 変更`);
-                    });
-                    console.log('🎉 フリップ完了！');
-                } else {
-                    console.log('😐 フリップなし');
-                }
-                
-                // 実際のゲーム判定も実行
-                setTimeout(() => {
-                    if (uniqueFlips.length > 0) {
-                        finishTurn(uniqueFlips);
-                    } else {
-                        finishTurn([]);
-                    }
-                }, 1000);
-                console.log('===========================');
-            } else {
-                // まだ動いている場合は再チェック
-                checkWhenStopped();
+                console.log('全コマを軽量化しました');
             }
-        }, 500); // 0.5秒ごとにチェック
-    }
-    
-    checkWhenStopped();
+            
+            // 判定時間チェック（3秒でタイムアウト）
+            const judgmentTime = Date.now() - judgmentStartTime;
+            if (judgmentTime > 3000) {
+                console.log('⏰ 判定タイムアウト - 判定不能で次のターンへ');
+                judgmentStartTime = null; // リセット
+                finishTurn([]); // フリップなしで次のターンへ
+                return;
+            }
+            
+            // 最初の隣接コマ取得（落としたコマから半径130）
+            const INITIAL_SEARCH_RADIUS = 150;
+            const nearbyPieces = allPieces.filter(piece => {
+                if (piece === lastPiece) return false;
+                
+                const distance = Math.sqrt(
+                    Math.pow(piece.position.x - lastPiece.position.x, 2) + 
+                    Math.pow(piece.position.y - lastPiece.position.y, 2)
+                );
+                
+                return distance <= INITIAL_SEARCH_RADIUS;
+            });
+            
+            console.log(`周囲のコマ数: ${nearbyPieces.length}`);
+            
+            // 各コマから直線判定
+            let allFlips = [];
+            nearbyPieces.forEach((startPiece, index) => {
+                console.log(`\n--- 探索${index + 1} ---`);
+                const lineFlips = debugLineSearch(lastPiece, startPiece, allPieces);
+                allFlips.push(...lineFlips);
+            });
+            
+            // 重複削除
+            const uniqueFlips = [...new Set(allFlips)];
+            console.log(`\n💫 総フリップ数: ${uniqueFlips.length}`);
+            
+            // フリップ対象を特定（実際のフリップはfinishTurnで実行）
+            if (uniqueFlips.length > 0) {
+                console.log('🔄 フリップ対象特定完了');
+                uniqueFlips.forEach(piece => {
+                    console.log(`   ${piece.player === 0 ? '黒→白' : '白→黒'} 予定`);
+                });
+                console.log('🎉 フリップ対象確定！');
+            } else {
+                console.log('😐 フリップなし');
+            }
+            
+            // 実際のゲーム判定も実行
+            setTimeout(() => {
+                judgmentStartTime = null; // 判定完了時にリセット
+                if (uniqueFlips.length > 0) {
+                    finishTurn(uniqueFlips);
+                } else {
+                    finishTurn([]);
+                }
+            }, 1000);
+            console.log('===========================');
+        } else {
+            // まだ動いている場合は再チェック
+            checkWhenStopped();
+        }
+    }, 500); // 0.5秒ごとにチェック
 }
 
 // 直線チェックとフリップ（停止後に実行される）
@@ -322,7 +378,7 @@ function finishTurn(flippedPieces) {
 // シンプル直線探索
 function debugLineSearch(droppedPiece, startPiece, allPieces) {
     const flips = [];
-    const NEXT_PIECE_RADIUS = 250;
+    const NEXT_PIECE_RADIUS = 180;
     const ANGLE_TOLERANCE = 15;
     
     // 基準方向計算
@@ -344,6 +400,16 @@ function debugLineSearch(droppedPiece, startPiece, allPieces) {
     let currentPiece = startPiece;
     let currentPos = startPos;
     let pathColors = [getColorName(droppedPiece.player), getColorName(startPiece.player)];
+    
+    // startPieceが同色の場合は即座に終了（フリップなし）
+    if (startPiece.player === droppedPiece.player) {
+        console.log(`🔍 直線探索開始: ${pathColors.join('→')}`);
+        console.log(`❌ 最初から同色なのでフリップなし`);
+        return [];
+    }
+    
+    // startPieceは異色なのでフリップ対象
+    flips.push(startPiece);
     
     console.log(`🔍 直線探索開始: ${pathColors.join('→')}`);
     
@@ -395,6 +461,7 @@ function debugLineSearch(droppedPiece, startPiece, allPieces) {
         
         if (nextPiece.player === droppedPiece.player) {
             console.log(`✅ パターン完成！フリップ実行: ${flips.length}個`);
+            console.log(`   フリップ対象: ${flips.map(f => getColorName(f.player)).join(', ')}`);
             return flips;
         } else {
             flips.push(nextPiece);
@@ -454,15 +521,14 @@ function updateUI() {
     currentPlayerName.textContent = PLAYERS[currentPlayer].name;
 }
 
-// スコア更新
+// スコア更新（停止したコマのみカウント）
 function updateScore() {
     const scores = [0, 0];
     
-    // 物理世界のすべてのオブジェクトをチェック
-    world.bodies.forEach(body => {
-        // コマであるかどうかをプロパティで判定
-        if (body.isGamePiece && body.player !== undefined) {
-            scores[body.player]++;
+    // gameBoard配列から停止したコマをカウント
+    gameBoard.forEach(piece => {
+        if (piece && piece.player !== undefined) {
+            scores[piece.player]++;
         }
     });
     
@@ -472,8 +538,9 @@ function updateScore() {
 
 // ゲーム終了チェック
 function checkGameEnd() {
-    // 100個のコマが配置されたら終了
-    return gameBoard.length >= 100;
+    // 停止したコマが44個になったら終了
+    const validPieces = gameBoard.filter(piece => piece && piece.player !== undefined);
+    return validPieces.length >= 44;
 }
 
 // ゲーム終了
@@ -481,10 +548,10 @@ function endGame() {
     gameOver = true;
     const scores = [0, 0];
     
-    // 物理世界のすべてのオブジェクトをチェック
-    world.bodies.forEach(body => {
-        if (body.isGamePiece && body.player !== undefined) {
-            scores[body.player]++;
+    // gameBoard配列から停止したコマをカウント
+    gameBoard.forEach(piece => {
+        if (piece && piece.player !== undefined) {
+            scores[piece.player]++;
         }
     });
     
@@ -538,15 +605,21 @@ function resetGame() {
     gameOverModal.classList.remove('show');
 }
 
-// イベントリスナー
-dropSlots.forEach((slot, index) => {
-    slot.addEventListener('click', () => handleDrop(index));
+// イベントリスナー - drop-zone全体をクリック可能に
+const dropZone = document.getElementById('drop-zone');
+dropZone.addEventListener('click', (e) => {
+    const rect = dropZone.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const dropX = (clickX / rect.width) * BOARD_WIDTH;
+    handleDropAtPosition(dropX);
 });
 
 resetBtn.addEventListener('click', resetGame);
 backBtn.addEventListener('click', () => window.location.href = '../index.html');
 newGameBtn.addEventListener('click', resetGame);
 closeModalBtn.addEventListener('click', () => gameOverModal.classList.remove('show'));
+
+
 
 // 初期化
 document.addEventListener('DOMContentLoaded', () => {
