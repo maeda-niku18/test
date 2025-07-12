@@ -1,0 +1,244 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Hiragino Kaku Gothic Pro', 'ヒラギノ角ゴ Pro W3', 'Meiryo', 'メイリオ', sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    color: #333;
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+#quiz-container {
+    background: white;
+    padding: 40px;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+h1 {
+    text-align: center;
+    color: #4a5568;
+    margin-bottom: 10px;
+    font-size: 2.5rem;
+    font-weight: 700;
+}
+
+.intro {
+    text-align: center;
+    color: #718096;
+    margin-bottom: 40px;
+    font-size: 1.1rem;
+}
+
+.question-group {
+    margin-bottom: 30px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 10px;
+    border-left: 4px solid #667eea;
+}
+
+.question-group h3 {
+    margin-bottom: 15px;
+    color: #2d3748;
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.question-group label {
+    display: block;
+    margin-bottom: 10px;
+    padding: 10px 15px;
+    background: white;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.question-group label:hover {
+    background: #e6f3ff;
+    border-color: #667eea;
+}
+
+.question-group input[type="radio"] {
+    margin-right: 10px;
+    transform: scale(1.2);
+}
+
+.question-group input[type="radio"]:checked + label,
+.question-group label:has(input[type="radio"]:checked) {
+    background: #667eea;
+    color: white;
+    border-color: #667eea;
+}
+
+.submit-btn {
+    width: 100%;
+    padding: 15px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 1.2rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 20px;
+}
+
+.submit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+.submit-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+#result-container {
+    background: white;
+    padding: 40px;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+#result-container h2 {
+    color: #4a5568;
+    margin-bottom: 20px;
+    font-size: 2rem;
+}
+
+#result-content {
+    margin-bottom: 30px;
+    text-align: left;
+}
+
+.result-type {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #667eea;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.result-description {
+    font-size: 1.1rem;
+    line-height: 1.8;
+    color: #4a5568;
+    margin-bottom: 20px;
+}
+
+.result-traits {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+.result-traits h4 {
+    color: #2d3748;
+    margin-bottom: 10px;
+    font-size: 1.2rem;
+}
+
+.result-traits ul {
+    list-style: none;
+    padding-left: 0;
+}
+
+.result-traits li {
+    padding: 5px 0;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.result-traits li:last-child {
+    border-bottom: none;
+}
+
+.result-traits li::before {
+    content: '✓';
+    color: #667eea;
+    font-weight: bold;
+    margin-right: 10px;
+}
+
+.restart-btn {
+    background: #48bb78;
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    border-radius: 25px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.restart-btn:hover {
+    background: #38a169;
+    transform: translateY(-2px);
+}
+
+.hidden {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 10px;
+    }
+    
+    #quiz-container, #result-container {
+        padding: 20px;
+    }
+    
+    h1 {
+        font-size: 2rem;
+    }
+    
+    .question-group {
+        padding: 15px;
+    }
+    
+    .question-group h3 {
+        font-size: 1.1rem;
+    }
+    
+    .submit-btn {
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    h1 {
+        font-size: 1.8rem;
+    }
+    
+    .intro {
+        font-size: 1rem;
+    }
+    
+    .question-group {
+        padding: 10px;
+    }
+    
+    .question-group label {
+        padding: 8px 12px;
+        font-size: 0.95rem;
+    }
+}
