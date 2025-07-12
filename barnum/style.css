@@ -137,8 +137,8 @@ h1 {
 }
 
 .result-description {
-    font-size: 1.1rem;
-    line-height: 1.8;
+    font-size: 1.2rem;
+    line-height: 2;
     color: #4a5568;
     margin-bottom: 20px;
 }
@@ -162,8 +162,10 @@ h1 {
 }
 
 .result-traits li {
-    padding: 5px 0;
+    padding: 8px 0;
     border-bottom: 1px solid #e2e8f0;
+    font-size: 1.1rem;
+    line-height: 1.8;
 }
 
 .result-traits li:last-child {

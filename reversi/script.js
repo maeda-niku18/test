@@ -133,8 +133,28 @@ function makeMove(row, col) {
     nextPlayer();
 }
 
+// ターン切り替えアニメーションを表示
+function showTurnChangeAnimation(newPlayer) {
+    const turnMessage = document.createElement('div');
+    turnMessage.className = 'turn-change-message';
+    turnMessage.innerHTML = `
+        <div class="turn-change-content ${PLAYERS[newPlayer].className}-border">
+            <div class="piece ${PLAYERS[newPlayer].className}"></div>
+            <div class="turn-text">${PLAYERS[newPlayer].name}のターン！</div>
+        </div>
+    `;
+    document.body.appendChild(turnMessage);
+    
+    setTimeout(() => {
+        if (document.body.contains(turnMessage)) {
+            document.body.removeChild(turnMessage);
+        }
+    }, 2000);
+}
+
 // 次のプレイヤーに交代
 function nextPlayer() {
+    const previousPlayer = currentPlayer;
     currentPlayer = (currentPlayer + 1) % 4;
     
     // 有効な手があるかチェック
@@ -155,6 +175,12 @@ function nextPlayer() {
     }
     
     passCount = 0;
+    
+    // プレイヤーが変わった場合のみターン切り替えアニメーションを表示
+    if (previousPlayer !== currentPlayer) {
+        showTurnChangeAnimation(currentPlayer);
+    }
+    
     renderBoard();
     updateUI();
 }
@@ -200,8 +226,22 @@ function calculateScores() {
 
 // UI更新
 function updateUI() {
+    // 現在のプレイヤー表示を更新
     currentPlayerPiece.className = `piece ${PLAYERS[currentPlayer].className}`;
     currentPlayerName.textContent = PLAYERS[currentPlayer].name;
+    
+    // 現在のプレイヤー情報エリアのクラスを更新
+    const currentPlayerInfo = document.querySelector('.current-player-info');
+    currentPlayerInfo.className = `current-player-info ${PLAYERS[currentPlayer].className}-turn`;
+    
+    // スコアパネルの現在のプレイヤーを強調
+    const allPlayerScores = document.querySelectorAll('.player-score');
+    allPlayerScores.forEach((scorePanel, index) => {
+        scorePanel.classList.remove('current-turn');
+        if (index === currentPlayer) {
+            scorePanel.classList.add('current-turn');
+        }
+    });
     
     const scores = calculateScores();
     document.getElementById('black-score').textContent = scores[0];

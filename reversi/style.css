@@ -51,9 +51,56 @@ h1 {
 .current-player-info {
     display: flex;
     align-items: center;
-    gap: 10px;
-    font-size: 1.2rem;
-    font-weight: 600;
+    gap: 15px;
+    font-size: 1.3rem;
+    font-weight: 700;
+    padding: 15px 25px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 25px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+    border: 3px solid transparent;
+    transition: all 0.3s ease;
+    animation: currentPlayerPulse 2s ease-in-out infinite;
+}
+
+.current-player-info.black-turn {
+    border-color: #000;
+    background: linear-gradient(45deg, rgba(0, 0, 0, 0.1), rgba(255, 255, 255, 0.9));
+}
+
+.current-player-info.white-turn {
+    border-color: #ddd;
+    background: linear-gradient(45deg, rgba(221, 221, 221, 0.3), rgba(255, 255, 255, 0.9));
+}
+
+.current-player-info.red-turn {
+    border-color: #e74c3c;
+    background: linear-gradient(45deg, rgba(231, 76, 60, 0.1), rgba(255, 255, 255, 0.9));
+}
+
+.current-player-info.blue-turn {
+    border-color: #3498db;
+    background: linear-gradient(45deg, rgba(52, 152, 219, 0.1), rgba(255, 255, 255, 0.9));
+}
+
+@keyframes currentPlayerPulse {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+    }
+    50% {
+        transform: scale(1.05);
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+    }
+}
+
+.current-player-info #current-player-piece {
+    animation: pieceRotate 3s linear infinite;
+}
+
+@keyframes pieceRotate {
+    0% { transform: rotateY(0deg); }
+    100% { transform: rotateY(360deg); }
 }
 
 .btn {
@@ -163,11 +210,66 @@ h1 {
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
     backdrop-filter: blur(10px);
     transition: all 0.3s ease;
+    border: 3px solid transparent;
+    position: relative;
 }
 
 .player-score:hover {
     transform: translateY(-5px);
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+}
+
+.player-score.current-turn {
+    border: 3px solid;
+    transform: scale(1.1);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    animation: currentTurnGlow 1.5s ease-in-out infinite alternate;
+}
+
+.player-score.current-turn::before {
+    content: "👑 YOUR TURN";
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(45deg, #ffd700, #ffed4e);
+    color: #333;
+    padding: 5px 12px;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+    animation: crownBounce 2s ease-in-out infinite;
+}
+
+@keyframes currentTurnGlow {
+    0% { box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3); }
+    100% { box-shadow: 0 15px 40px rgba(255, 215, 0, 0.6); }
+}
+
+@keyframes crownBounce {
+    0%, 100% { transform: translateX(-50%) translateY(0); }
+    50% { transform: translateX(-50%) translateY(-5px); }
+}
+
+.player-score.black-player.current-turn {
+    border-color: #000;
+    background: linear-gradient(45deg, rgba(0, 0, 0, 0.1), rgba(255, 255, 255, 0.9));
+}
+
+.player-score.white-player.current-turn {
+    border-color: #ddd;
+    background: linear-gradient(45deg, rgba(221, 221, 221, 0.3), rgba(255, 255, 255, 0.9));
+}
+
+.player-score.red-player.current-turn {
+    border-color: #e74c3c;
+    background: linear-gradient(45deg, rgba(231, 76, 60, 0.1), rgba(255, 255, 255, 0.9));
+}
+
+.player-score.blue-player.current-turn {
+    border-color: #3498db;
+    background: linear-gradient(45deg, rgba(52, 152, 219, 0.1), rgba(255, 255, 255, 0.9));
 }
 
 .player-icon {
@@ -363,6 +465,73 @@ h1 {
     }
 }
 
+.turn-change-message {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 600;
+    animation: turnChangeSlide 2s ease-out;
+}
+
+.turn-change-content {
+    background: linear-gradient(45deg, rgba(255, 255, 255, 0.95), rgba(248, 249, 250, 0.95));
+    padding: 30px 40px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(10px);
+    border: 3px solid;
+}
+
+.turn-change-content .piece {
+    width: 60px;
+    height: 60px;
+    animation: pieceSpinIn 1s ease-out;
+}
+
+.turn-text {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #333;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+@keyframes turnChangeSlide {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.3) rotateY(-180deg);
+    }
+    30% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1.1) rotateY(0deg);
+    }
+    70% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1) rotateY(0deg);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.8) rotateY(180deg);
+    }
+}
+
+.turn-change-content.black-border { border-color: #000; }
+.turn-change-content.white-border { border-color: #ddd; }
+.turn-change-content.red-border { border-color: #e74c3c; }
+.turn-change-content.blue-border { border-color: #3498db; }
+
+@keyframes pieceSpinIn {
+    0% {
+        transform: rotateY(-360deg) scale(0.5);
+    }
+    100% {
+        transform: rotateY(0deg) scale(1);
+    }
+}
+
 @media (max-width: 768px) {
     .container {
         padding: 10px;
@@ -395,5 +564,19 @@ h1 {
     .modal-content {
         padding: 20px;
         margin: 20px;
+    }
+    
+    .turn-change-content {
+        padding: 20px 30px;
+        gap: 15px;
+    }
+    
+    .turn-change-content .piece {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .turn-text {
+        font-size: 1.5rem;
     }
 }

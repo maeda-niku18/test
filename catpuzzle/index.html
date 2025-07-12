@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>猫パズル</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>猫パズル</h1>
+        <p>ピースをクリックして、絵を完成させよう！</p>
+        <div id="puzzle-container"></div>
+        <div class="controls">
+            <button id="start-button">新しい猫で始める</button>
+            <button id="download-button" disabled>画像をダウンロード</button>
+            <button id="back-button">メニューに戻る</button>
+        </div>
+        <p id="message"></p>
+    </div>
+
+    <!-- Completion Modal -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h2>完成！</h2>
+            <img id="completed-image" src="" alt="Completed Puzzle">
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

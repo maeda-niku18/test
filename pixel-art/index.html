@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ピクセルアート ジェネレーター</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎮 ピクセルアート ジェネレーター 🎨</h1>
+            <p class="subtitle">文字を入力して、あなただけのピクセルアートキャラクターを生成しよう！</p>
+        </div>
+
+        <div class="input-section">
+            <div class="input-card">
+                <label for="text-input" class="input-label">✨ 文字を入力してください</label>
+                <div class="input-group">
+                    <input type="text" id="text-input" placeholder="例: あなたの名前、好きな言葉、何でもOK！" maxlength="50">
+                    <button id="generate-btn" class="generate-btn">
+                        <span class="btn-text">生成する</span>
+                        <span class="btn-icon">🚀</span>
+                    </button>
+                </div>
+                <div class="input-hints">
+                    <div class="hint">💡 日本語、英語、数字、記号なんでもOK！</div>
+                    <div class="hint">🎲 同じ文字でも毎回違うアートが生成されることがあります</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="result-section" id="result-section">
+            <div class="result-card">
+                <div class="result-header">
+                    <h2 id="result-title">「○○」さんのピクセルアートはこちらです！</h2>
+                    <div class="result-subtitle">あなた専用のキャラクターが完成しました 🎉</div>
+                </div>
+                
+                <div class="pixel-art-container">
+                    <div class="pixel-frame">
+                        <img id="pixel-art-image" src="" alt="生成されたピクセルアート">
+                        <div class="loading-spinner" id="loading-spinner">
+                            <div class="spinner"></div>
+                            <div class="loading-text">ピクセルアートを生成中...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button id="download-btn" class="action-btn download-btn">
+                        <span>💾 画像をダウンロード</span>
+                    </button>
+                    <button id="share-btn" class="action-btn share-btn">
+                        <span>📤 URLをコピー</span>
+                    </button>
+                    <button id="random-btn" class="action-btn random-btn">
+                        <span>🎲 ランダム生成</span>
+                    </button>
+                </div>
+
+                <div class="character-info">
+                    <div class="info-item">
+                        <span class="info-label">シード値:</span>
+                        <span id="seed-value" class="info-value">-</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">生成時刻:</span>
+                        <span id="generation-time" class="info-value">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="gallery-section">
+            <h3>🖼️ 最近生成されたアート</h3>
+            <div class="gallery-grid" id="gallery-grid">
+                <!-- 過去の生成物がここに表示される -->
+            </div>
+        </div>
+
+        <div class="footer">
+            <button id="back-btn" class="back-btn">🏠 メニューに戻る</button>
+            <div class="credits">
+                <p>Powered by <a href="https://dicebear.com/" target="_blank">DiceBear API</a></p>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
