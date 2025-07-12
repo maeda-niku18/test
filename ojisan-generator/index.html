@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>おじさん構文ジェネレーター</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/build/kuromoji.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>おじさん構文ジェネレーター</h1>
+        <p class="description">文章を入力して、イイ感じのおじさん構文に変換しよう！</p>
+        
+        <div class="generator-area">
+            <textarea id="input-text" placeholder="ここに文章を入力してネ(^_-)-☆"></textarea>
+            <button id="convert-button" disabled>辞書を読み込み中...</button>
+            <div id="result-area">
+                <p id="result-text">ここに変換結果が表示されるヨ！</p>
+            </div>
+        </div>
+        <button id="back-button" class="back-button">メニューに戻る</button>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

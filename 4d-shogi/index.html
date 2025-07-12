@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>4D Shogi</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>4D Shogi (3x3x3x3)</h1>
+            <p>四次元空間で繰り広げられる、新しい将棋体験。</p>
+        </header>
+        <div id="game-container">
+            <div id="game-board">
+                <!-- JavaScriptによって動的に生成されます -->
+            </div>
+            <div id="game-info">
+                <h2 id="turn-info">Player 1のターン</h2>
+                <div id="captured-pieces-container">
+                    <h3>持ち駒</h3>
+                    <div class="captured-box" id="player1-captured">
+                        <p>Player 1:</p>
+                        <div class="pieces"></div>
+                    </div>
+                    <div class="captured-box" id="player2-captured">
+                        <p>Player 2:</p>
+                        <div class="pieces"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

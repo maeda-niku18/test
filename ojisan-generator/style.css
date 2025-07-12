@@ -1,0 +1,113 @@
+/* 全体にbox-sizingを適用 */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Hiragino Kaku Gothic Pro', 'ヒラギノ角ゴ Pro W3', 'Meiryo', 'メイリオ', sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    color: #333;
+    line-height: 1.6;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    margin: 0;
+}
+
+.container {
+    max-width: 600px;
+    width: 100%;
+    margin: 0 auto;
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+h1 {
+    color: #4a5568;
+    margin-bottom: 10px;
+    font-size: 2.2rem;
+}
+
+.description {
+    color: #718096;
+    margin-bottom: 30px;
+}
+
+.generator-area {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+#input-text {
+    width: 100%;
+    min-height: 120px;
+    padding: 15px;
+    border-radius: 10px;
+    border: 2px solid #e2e8f0;
+    font-size: 1rem;
+    resize: vertical;
+}
+
+#input-text:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+#convert-button {
+    padding: 15px 25px;
+    font-size: 1.2rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    border-radius: 10px;
+    color: white;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    transition: all 0.3s ease;
+}
+
+#convert-button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+}
+
+#result-area {
+    width: 100%;
+    min-height: 150px;
+    padding: 20px;
+    border-radius: 10px;
+    background: #f8f9fa;
+    border: 2px dashed #d1d8e0;
+    text-align: left;
+    white-space: pre-wrap; /* Preserve line breaks */
+    word-wrap: break-word;
+}
+
+#result-text {
+    font-size: 1.1rem;
+    color: #2d3748;
+}
+
+.back-button {
+    margin-top: 30px;
+    padding: 10px 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    border-radius: 25px;
+    color: white;
+    background: #a0aec0;
+    transition: all 0.3s ease;
+}
+
+.back-button:hover {
+    background: #718096;
+}

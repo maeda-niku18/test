@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>物理演算リバーシ</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚪⚫ 物理演算リバーシ 🌍</h1>
+            <p class="subtitle">重力と物理法則が支配する新しいリバーシの世界</p>
+        </div>
+
+        <div class="game-interface">
+            <div class="game-info">
+                <div class="player-info" id="player-info">
+                    <div class="current-player">
+                        <div class="player-piece black" id="current-piece"></div>
+                        <span id="current-player-name">黒プレイヤー</span>のターン
+                    </div>
+                    <div class="scores">
+                        <div class="score-item">
+                            <div class="piece black"></div>
+                            <span id="black-score">2</span>
+                        </div>
+                        <div class="score-item">
+                            <div class="piece white"></div>
+                            <span id="white-score">2</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="controls">
+                    <button id="reset-btn" class="btn reset-btn">🔄 リセット</button>
+                    <button id="back-btn" class="btn back-btn">🏠 メニューに戻る</button>
+                </div>
+            </div>
+
+            <div class="game-area">
+                <div class="physics-container">
+                    <canvas id="physics-canvas"></canvas>
+                    <div class="drop-zone" id="drop-zone">
+                        <div class="drop-indicators">
+                            <div class="drop-slot" data-column="0"></div>
+                            <div class="drop-slot" data-column="1"></div>
+                            <div class="drop-slot" data-column="2"></div>
+                            <div class="drop-slot" data-column="3"></div>
+                            <div class="drop-slot" data-column="4"></div>
+                            <div class="drop-slot" data-column="5"></div>
+                            <div class="drop-slot" data-column="6"></div>
+                            <div class="drop-slot" data-column="7"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="game-status" id="game-status">
+                    <div class="status-message" id="status-message">
+                        上のスロットをクリックしてコマを落としてください
+                    </div>
+                    <div class="physics-info">
+                        <div class="info-item">
+                            <span class="icon">⏱️</span>
+                            <span>安定時間: <span id="settle-time">0.0</span>秒</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="icon">🎯</span>
+                            <span>落下中: <span id="falling-pieces">0</span>個</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="rules-panel">
+            <h3>🎮 ゲームルール</h3>
+            <div class="rules-content">
+                <div class="rule-item">
+                    <span class="rule-icon">⬇️</span>
+                    <span>上のスロットからコマを落として配置</span>
+                </div>
+                <div class="rule-item">
+                    <span class="rule-icon">🌍</span>
+                    <span>コマは重力で落下し、他のコマに衝突して転がる</span>
+                </div>
+                <div class="rule-item">
+                    <span class="rule-icon">⚡</span>
+                    <span>コマが完全に停止した時に直線判定を実行</span>
+                </div>
+                <div class="rule-item">
+                    <span class="rule-icon">🔄</span>
+                    <span>直線上に並んだ相手のコマをひっくり返す</span>
+                </div>
+                <div class="rule-item">
+                    <span class="rule-icon">⭐</span>
+                    <span>落下中の衝突による移動ではひっくり返らない</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="game-over-modal" id="game-over-modal">
+            <div class="modal-content">
+                <h2>🎊 ゲーム終了 🎊</h2>
+                <div class="final-result" id="final-result"></div>
+                <div class="final-scores" id="final-scores"></div>
+                <div class="modal-buttons">
+                    <button id="new-game-btn" class="btn">新しいゲーム</button>
+                    <button id="close-modal-btn" class="btn">閉じる</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
