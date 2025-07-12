@@ -174,7 +174,7 @@ restartBtn.addEventListener('click', function() {
 
 // メニューに戻るボタンの処理
 backBtn.addEventListener('click', function() {
-    window.location.href = 'index.html';
+    window.location.href = '../index.html';
 });
 
 // ページ読み込み時の初期化
