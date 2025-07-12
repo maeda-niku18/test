@@ -45,7 +45,7 @@ p {
 
 .puzzle-piece {
     /* Size will be set by JS */
-    background-size: cover; /* Use cover for better fitting */
+    background-size: 450px 450px; /* Fixed size */
     cursor: pointer;
     transition: all 0.3s ease;
     border: 1px solid #fff;
