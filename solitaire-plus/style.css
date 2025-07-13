@@ -86,6 +86,8 @@ header h1 {
 .foundation-label {
     font-size: 1.5rem;
     color: #ef4444;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .foundation-pile[data-suit="diamonds"] .foundation-label {
@@ -113,7 +115,7 @@ header h1 {
 
 .table-pile {
     min-width: 80px;
-    min-height: 120px;
+    min-height: 200px;
     border: 2px dashed rgba(255, 255, 255, 0.3);
     border-radius: 8px;
     padding: 10px;
@@ -156,7 +158,7 @@ header h1 {
 .card {
     width: 70px;
     height: 100px;
-    background: white;
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
     border-radius: 8px;
     border: 2px solid #374151;
     display: flex;
@@ -169,6 +171,98 @@ header h1 {
     user-select: none;
     font-weight: bold;
     font-size: 1.2rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.card-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+}
+
+.card-rank {
+    font-size: 1.4rem;
+    font-weight: bold;
+}
+
+.card-suit {
+    font-size: 1.8rem;
+    line-height: 1;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* テーブルピルの中央スートを少し小さく */
+.table-pile .card-suit {
+    font-size: 1.5rem;
+}
+
+/* カードの角 */
+.card-corner {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 0.8rem;
+    line-height: 1;
+}
+
+.card-corner.top-left {
+    top: 5px;
+    left: 5px;
+}
+
+.card-corner.bottom-right {
+    bottom: 5px;
+    right: 5px;
+    transform: rotate(180deg);
+}
+
+.corner-rank {
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+.corner-suit {
+    font-size: 1rem;
+}
+
+/* テーブルピルのカードの角を調整 */
+.table-pile .card-corner.top-left {
+    top: 3px;
+    left: 3px;
+}
+
+.table-pile .card-corner.bottom-right {
+    bottom: 3px;
+    right: 3px;
+}
+
+.table-pile .corner-rank {
+    font-size: 0.8rem;
+}
+
+.table-pile .corner-suit {
+    font-size: 0.9rem;
+}
+
+/* 重なったカードの角をさらに小さく */
+.table-pile .card:nth-child(n+3) .card-corner.top-left {
+    top: 2px;
+    left: 2px;
+}
+
+.table-pile .card:nth-child(n+3) .card-corner.bottom-right {
+    bottom: 2px;
+    right: 2px;
+}
+
+.table-pile .card:nth-child(n+3) .corner-rank {
+    font-size: 0.7rem;
+}
+
+.table-pile .card:nth-child(n+3) .corner-suit {
+    font-size: 0.8rem;
 }
 
 .card:hover {
@@ -182,11 +276,51 @@ header h1 {
     border-color: #f093fb;
 }
 
+/* ドラッグ&ドロップスタイル */
+.card.dragging {
+    opacity: 0.5;
+    transform: rotate(5deg);
+    z-index: 1000;
+}
+
+.drop-zone-active {
+    background: rgba(240, 147, 251, 0.2) !important;
+    border-color: #f093fb !important;
+    transform: scale(1.05);
+}
+
+.card-slot.drop-zone-active,
+.table-pile.drop-zone-active {
+    background: rgba(240, 147, 251, 0.2) !important;
+    border-color: #f093fb !important;
+    transform: scale(1.05);
+}
+
 .card.red {
     color: #ef4444;
 }
 
+.card.red .card-suit,
+.card.red .corner-suit {
+    color: #ef4444;
+}
+
+.card.red .card-rank,
+.card.red .corner-rank {
+    color: #ef4444;
+}
+
 .card.black {
+    color: #1f2937;
+}
+
+.card.black .card-suit,
+.card.black .corner-suit {
+    color: #1f2937;
+}
+
+.card.black .card-rank,
+.card.black .corner-rank {
     color: #1f2937;
 }
 
@@ -211,10 +345,15 @@ header h1 {
     left: 0;
 }
 
-.card-stack .card:nth-child(2) { top: 5px; }
-.card-stack .card:nth-child(3) { top: 10px; }
-.card-stack .card:nth-child(4) { top: 15px; }
-.card-stack .card:nth-child(5) { top: 20px; }
+.card-stack .card:nth-child(2) { top: 8px; }
+.card-stack .card:nth-child(3) { top: 16px; }
+.card-stack .card:nth-child(4) { top: 24px; }
+.card-stack .card:nth-child(5) { top: 32px; }
+.card-stack .card:nth-child(6) { top: 40px; }
+.card-stack .card:nth-child(7) { top: 48px; }
+.card-stack .card:nth-child(8) { top: 56px; }
+.card-stack .card:nth-child(9) { top: 64px; }
+.card-stack .card:nth-child(10) { top: 72px; }
 
 /* スキルパネル */
 .skills-panel {

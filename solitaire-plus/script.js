@@ -9,7 +9,7 @@ class SolitairePlus {
         this.selectedCard = null;
         this.score = 0;
         this.moves = 0;
-        this.skillPoints = 3;
+        this.skillPoints = 10;
         this.gameHistory = [];
         this.startTime = Date.now();
         this.isTimeStopped = false;
@@ -32,7 +32,7 @@ class SolitairePlus {
     // デッキ作成
     createDeck() {
         const suits = ['hearts', 'diamonds', 'clubs', 'spades'];
-        const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+        const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10'];
         
         this.deck = [];
         suits.forEach(suit => {
@@ -51,7 +51,7 @@ class SolitairePlus {
     getCardValue(rank) {
         const values = {
             'A': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8,
-            '9': 9, '10': 10, 'J': 11, 'Q': 12, 'K': 13
+            '9': 9, '10': 10
         };
         return values[rank];
     }
@@ -135,7 +135,7 @@ class SolitairePlus {
         const pile = this.table[pileIndex];
         
         if (pile.length === 0) {
-            return card.rank === 'K';
+            return card.rank === '10';
         } else {
             const topCard = pile[pile.length - 1];
             return topCard.faceUp && 
@@ -370,6 +370,9 @@ class SolitairePlus {
         this.updateFoundation();
         this.updateTable();
         this.updateStockWaste();
+        
+        // ドラッグ&ドロップイベントを再バインド
+        this.bindDragAndDropEvents();
     }
 
     // ファウンデーションを更新
@@ -395,11 +398,29 @@ class SolitairePlus {
             
             pile.forEach((card, cardIndex) => {
                 const cardElement = this.createCardElement(card);
-                cardElement.style.top = `${cardIndex * 20}px`;
+                cardElement.style.top = `${cardIndex * 15}px`;
                 cardElement.style.zIndex = cardIndex;
+                
+                // テーブルピルのカードは重なりを考慮してサイズ調整
+                if (cardIndex > 0) {
+                    cardElement.style.width = '65px';
+                    cardElement.style.height = '90px';
+                    cardElement.style.fontSize = '1rem';
+                    
+                    // 重なりが多い場合はさらに小さく
+                    if (cardIndex > 3) {
+                        cardElement.style.width = '60px';
+                        cardElement.style.height = '85px';
+                        cardElement.style.fontSize = '0.9rem';
+                    }
+                }
+                
                 pileElement.appendChild(cardElement);
             });
         });
+        
+        // ドラッグ&ドロップイベントを再バインド
+        this.bindDragAndDropEvents();
     }
 
     // ストック・ウェイストを更新
@@ -431,7 +452,36 @@ class SolitairePlus {
             cardElement.classList.add('face-down');
         } else {
             cardElement.classList.add(card.color);
-            cardElement.textContent = card.rank;
+            
+            // カードの内容を作成
+            const cardContent = document.createElement('div');
+            cardContent.className = 'card-content';
+            
+            // ランク
+            const rankElement = document.createElement('div');
+            rankElement.className = 'card-rank';
+            rankElement.textContent = card.rank;
+            cardContent.appendChild(rankElement);
+            
+            // スート（柄）
+            const suitElement = document.createElement('div');
+            suitElement.className = 'card-suit';
+            suitElement.textContent = this.getSuitSymbol(card.suit);
+            cardContent.appendChild(suitElement);
+            
+            cardElement.appendChild(cardContent);
+            
+            // 左上の小さなランクとスート
+            const topLeft = document.createElement('div');
+            topLeft.className = 'card-corner top-left';
+            topLeft.innerHTML = `<div class="corner-rank">${card.rank}</div><div class="corner-suit">${this.getSuitSymbol(card.suit)}</div>`;
+            cardElement.appendChild(topLeft);
+            
+            // 右下の小さなランクとスート（逆さま）
+            const bottomRight = document.createElement('div');
+            bottomRight.className = 'card-corner bottom-right';
+            bottomRight.innerHTML = `<div class="corner-rank">${card.rank}</div><div class="corner-suit">${this.getSuitSymbol(card.suit)}</div>`;
+            cardElement.appendChild(bottomRight);
         }
         
         // ドラッグ&ドロップ機能を追加
@@ -440,6 +490,17 @@ class SolitairePlus {
         cardElement.addEventListener('dragend', (e) => this.handleDragEnd(e));
         
         return cardElement;
+    }
+
+    // スートのシンボルを取得
+    getSuitSymbol(suit) {
+        const symbols = {
+            'hearts': '♥',
+            'diamonds': '♦',
+            'clubs': '♣',
+            'spades': '♠'
+        };
+        return symbols[suit] || '?';
     }
 
     // スコアを更新
@@ -479,6 +540,9 @@ class SolitairePlus {
             this.drawFromStock();
         });
         
+        // ドラッグ&ドロップイベント
+        this.bindDragAndDropEvents();
+        
         // スキルボタン
         document.getElementById('transform-skill').addEventListener('click', () => {
             this.useTransformSkill();
@@ -514,6 +578,130 @@ class SolitairePlus {
         });
     }
 
+    // ドラッグ&ドロップイベントをバインド
+    bindDragAndDropEvents() {
+        // ドロップ可能なエリアを設定
+        const dropZones = [
+            ...document.querySelectorAll('.foundation-pile .card-slot'),
+            ...document.querySelectorAll('.table-pile'),
+            document.querySelector('.waste-slot')
+        ];
+        
+        dropZones.forEach(zone => {
+            zone.addEventListener('dragover', (e) => this.handleDragOver(e));
+            zone.addEventListener('drop', (e) => this.handleDrop(e));
+            zone.addEventListener('dragenter', (e) => this.handleDragEnter(e));
+            zone.addEventListener('dragleave', (e) => this.handleDragLeave(e));
+        });
+    }
+
+    // ドラッグ開始
+    handleDragStart(e, card) {
+        e.dataTransfer.setData('text/plain', JSON.stringify({
+            card: card,
+            source: this.getCardLocation(e.target)
+        }));
+        e.target.classList.add('dragging');
+    }
+
+    // ドラッグ終了
+    handleDragEnd(e) {
+        e.target.classList.remove('dragging');
+        this.clearDropZones();
+    }
+
+    // ドラッグオーバー
+    handleDragOver(e) {
+        e.preventDefault();
+        e.currentTarget.classList.add('drop-zone-active');
+    }
+
+    // ドラッグエンター
+    handleDragEnter(e) {
+        e.preventDefault();
+        e.currentTarget.classList.add('drop-zone-active');
+    }
+
+    // ドラッグリーブ
+    handleDragLeave(e) {
+        e.currentTarget.classList.remove('drop-zone-active');
+    }
+
+    // ドロップ
+    handleDrop(e) {
+        e.preventDefault();
+        this.clearDropZones();
+        
+        try {
+            const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+            const targetLocation = this.getDropLocation(e.currentTarget);
+            
+            if (this.canMoveCard(data.card, targetLocation.type, targetLocation.index)) {
+                this.moveCard(data.card, data.source.type, data.source.index, targetLocation.type, targetLocation.index);
+                this.updateDisplay();
+            }
+        } catch (error) {
+            console.error('ドロップ処理エラー:', error);
+        }
+    }
+
+    // カードの場所を取得
+    getCardLocation(cardElement) {
+        // ファウンデーション
+        const foundationPile = cardElement.closest('.foundation-pile');
+        if (foundationPile) {
+            const suit = foundationPile.dataset.suit;
+            const suitIndex = ['hearts', 'diamonds', 'clubs', 'spades'].indexOf(suit);
+            return { type: 'foundation', index: suitIndex };
+        }
+        
+        // テーブル
+        const tablePile = cardElement.closest('.table-pile');
+        if (tablePile) {
+            const pileIndex = parseInt(tablePile.dataset.pile);
+            return { type: 'table', index: pileIndex };
+        }
+        
+        // ウェイスト
+        if (cardElement.closest('.waste-slot')) {
+            return { type: 'waste', index: 0 };
+        }
+        
+        return null;
+    }
+
+    // ドロップ場所を取得
+    getDropLocation(dropElement) {
+        // ファウンデーション
+        const foundationPile = dropElement.closest('.foundation-pile');
+        if (foundationPile) {
+            const suit = foundationPile.dataset.suit;
+            const suitIndex = ['hearts', 'diamonds', 'clubs', 'spades'].indexOf(suit);
+            return { type: 'foundation', index: suitIndex };
+        }
+        
+        // テーブル
+        const tablePile = dropElement.closest('.table-pile');
+        if (tablePile) {
+            const pileIndex = parseInt(tablePile.dataset.pile);
+            return { type: 'table', index: pileIndex };
+        }
+        
+        // ウェイスト
+        if (dropElement.closest('.waste-slot')) {
+            return { type: 'waste', index: 0 };
+        }
+        
+        return null;
+    }
+
+    // ドロップゾーンのハイライトをクリア
+    clearDropZones() {
+        document.querySelectorAll('.drop-zone-active').forEach(zone => {
+            zone.classList.remove('drop-zone-active');
+        });
+    }
+
     // ゲームをリセット
     resetGame() {
         this.deck = [];
@@ -524,7 +712,7 @@ class SolitairePlus {
         this.selectedCard = null;
         this.score = 0;
         this.moves = 0;
-        this.skillPoints = 3;
+        this.skillPoints = 10;
         this.gameHistory = [];
         this.startTime = Date.now();
         this.isTimeStopped = false;

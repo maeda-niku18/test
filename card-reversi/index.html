@@ -11,16 +11,20 @@
         <h1>カードリバーシ</h1>
         <div id="game-info">
             <p id="turn-info">Black's Turn</p>
-            <p id="message-area"></p>
+            <div class="message-button-container">
+                <p id="message-area"></p>
+                <button id="cancel-card" style="display: none;">カード選択をキャンセル</button>
+            </div>
+            <button id="reset-game">ゲームをリセット</button>
         </div>
-        <div class="player-info" id="player-black-info">
-            <h2>Player 1 (Black)</h2>
+        <div class="player-info black-player" id="player-black-info">
+            <h2>プレイヤー1 黒</h2>
             <p>Score: <span id="black-score">2</span></p>
             <div class="cards" id="black-cards"></div>
         </div>
         <div id="game-board"></div>
-        <div class="player-info" id="player-white-info">
-            <h2>Player 2 (White)</h2>
+        <div class="player-info white-player" id="player-white-info">
+            <h2>プレイヤー2 白</h2>
             <p>Score: <span id="white-score">2</span></p>
             <div class="cards" id="white-cards"></div>
         </div>
@@ -30,6 +34,31 @@
             <div id="card-list"></div>
         </div>
     </div>
+    
+    <!-- 勝敗モーダル -->
+    <div id="game-result-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h2 id="winner-title">ゲーム終了</h2>
+            <div id="final-scores">
+                <p>最終スコア</p>
+                <div class="score-display">
+                    <div class="score-item">
+                        <span class="score-label black">黒</span>
+                        <span id="final-black-score" class="score-value">0</span>
+                    </div>
+                    <div class="score-item">
+                        <span class="score-label white">白</span>
+                        <span id="final-white-score" class="score-value">0</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button id="play-again-btn">もう一度プレイ</button>
+                <button id="close-modal-btn">閉じる</button>
+            </div>
+        </div>
+    </div>
+    
     <script src="js/main.js" type="module"></script>
 </body>
 </html>

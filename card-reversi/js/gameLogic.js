@@ -32,6 +32,7 @@ export function getFlippableDiscs(board, row, col, player) {
         if (x >= 0 && x < 8 && y >= 0 && y < 8 && board[x][y] === player) {
             flippableDiscs = flippableDiscs.concat(discsToFlip);
         }
+        // 赤いコマは相手のコマでも自分のコマでもないので、自然に処理が停止する
     }
     return flippableDiscs;
 }
@@ -50,6 +51,11 @@ export function flipDiscs(gameState, discsToFlip) {
 
         // Check for mines on the regular board
         if (disc.x >= 0 && disc.x < 8 && disc.y >= 0 && disc.y < 8) {
+            // 赤いコマはひっくり返せない
+            if (gameState.board[disc.x][disc.y] === 'red') {
+                continue;
+            }
+            
             const mineIndex = gameState.mines.findIndex(m => m.row === disc.x && m.col === disc.y);
             if (mineIndex !== -1) {
                 triggeredMine = gameState.mines.splice(mineIndex, 1)[0];
@@ -69,7 +75,13 @@ function detonateMine(gameState, mine) {
     for (let r = mine.row - 1; r <= mine.row + 1; r++) {
         for (let c = mine.col - 1; c <= mine.col + 1; c++) {
             if (r >= 0 && r < 8 && c >= 0 && c < 8) {
-                gameState.board[r][c] = mine.owner;
+                // 黒→白、白→黒に変更、空白はそのまま
+                if (gameState.board[r][c] === 'black') {
+                    gameState.board[r][c] = 'white';
+                } else if (gameState.board[r][c] === 'white') {
+                    gameState.board[r][c] = 'black';
+                }
+                // 空白（null）の場合は何もしない
             }
         }
     }
