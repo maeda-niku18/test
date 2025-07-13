@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>カードリバーシ</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>カードリバーシ</h1>
+        <div id="game-info">
+            <p id="turn-info">Black's Turn</p>
+            <p id="message-area"></p>
+        </div>
+        <div class="player-info" id="player-black-info">
+            <h2>Player 1 (Black)</h2>
+            <p>Score: <span id="black-score">2</span></p>
+            <div class="cards" id="black-cards"></div>
+        </div>
+        <div id="game-board"></div>
+        <div class="player-info" id="player-white-info">
+            <h2>Player 2 (White)</h2>
+            <p>Score: <span id="white-score">2</span></p>
+            <div class="cards" id="white-cards"></div>
+        </div>
+        
+        <div id="card-reference" class="card-reference">
+            <h3>カード効果一覧</h3>
+            <div id="card-list"></div>
+        </div>
+    </div>
+    <script src="js/main.js" type="module"></script>
+</body>
+</html>

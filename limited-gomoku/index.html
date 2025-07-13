@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>石の数限定五目並べ</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 設定画面 -->
+        <div id="settingsScreen" class="screen">
+            <div class="header">
+                <h1>石の数限定五目並べ</h1>
+                <p>設定数以上石を置くと、古い石から消えるルールです</p>
+            </div>
+            
+            <div class="settings-panel">
+                <div class="setting-item">
+                    <label for="stoneLimit">石の数を設定してください (5-15個):</label>
+                    <input type="range" id="stoneLimit" min="5" max="15" value="7">
+                    <span id="stoneLimitValue">7</span>個
+                </div>
+                
+                <button id="startGame" class="start-button">ゲーム開始</button>
+            </div>
+        </div>
+
+        <!-- ゲーム画面 -->
+        <div id="gameScreen" class="screen hidden">
+            <div class="header">
+                <h1>石の数限定五目並べ</h1>
+                <div class="game-info">
+                    <div class="player-info">
+                        <span class="current-player-indicator black" id="playerIndicator"></span>
+                        <span id="currentPlayer">黒</span>の番
+                    </div>
+                    <div class="stone-count">
+                        残り石数: <span id="remainingStones">7</span>個
+                    </div>
+                    <button id="backToSettings" class="back-button">設定に戻る</button>
+                </div>
+            </div>
+
+            <div id="winnerDisplay" class="winner-display hidden">
+                <h2 id="winnerText"></h2>
+                <button id="playAgain" class="play-again-button">もう一度プレイ</button>
+            </div>
+
+            <div class="game-board-container">
+                <div id="gameBoard" class="game-board"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

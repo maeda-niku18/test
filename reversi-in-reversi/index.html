@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reversi in Reversi</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- ゲームモード選択画面 -->
+        <div id="mode-selection" class="mode-selection">
+            <div class="header">
+                <h1>🔥 リバーシ in リバーシ 🔥</h1>
+                <div class="subtitle">陣地で陣地を奪う究極戦略バトル！</div>
+            </div>
+            
+            <div class="mode-options">
+                <h2>🎯 対戦モードを選択</h2>
+                
+                <div class="mode-buttons">
+                    <button class="mode-btn" id="vs-cpu-btn">
+                        <div class="mode-icon">🤖</div>
+                        <div class="mode-title">CPU対戦</div>
+                        <div class="mode-description">コンピューターと対戦</div>
+                    </button>
+                    
+                    <button class="mode-btn" id="vs-player-btn">
+                        <div class="mode-icon">👥</div>
+                        <div class="mode-title">プレイヤー対戦</div>
+                        <div class="mode-description">2人で対戦</div>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- CPU設定画面 -->
+        <div id="cpu-settings" class="cpu-settings hidden">
+            <div class="header">
+                <h1>🤖 CPU対戦設定</h1>
+            </div>
+            
+            <div class="settings-options">
+                <div class="setting-group">
+                    <h3>🎯 CPU強度</h3>
+                    <div class="difficulty-buttons">
+                        <button class="difficulty-btn" data-difficulty="beginner">
+                            <div class="difficulty-icon">🌱</div>
+                            <div class="difficulty-title">初級</div>
+                            <div class="difficulty-description">ランダムに手を選択</div>
+                        </button>
+                        <button class="difficulty-btn" data-difficulty="intermediate">
+                            <div class="difficulty-icon">⚔️</div>
+                            <div class="difficulty-title">中級</div>
+                            <div class="difficulty-description">ブロック戦略を考慮</div>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="setting-group">
+                    <h3>🎲 先手選択</h3>
+                    <div class="first-player-buttons">
+                        <button class="first-player-btn" data-first="player">
+                            <div class="first-icon">👤</div>
+                            <div class="first-title">プレイヤー先手</div>
+                        </button>
+                        <button class="first-player-btn" data-first="cpu">
+                            <div class="first-icon">🤖</div>
+                            <div class="first-title">CPU先手</div>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="settings-buttons">
+                    <button id="start-cpu-game-btn" class="btn primary">ゲーム開始</button>
+                    <button id="back-to-mode-btn" class="btn secondary">戻る</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="header game-header hidden">
+            <h1>🔥 リバーシ in リバーシ 🔥</h1>
+            <div class="subtitle">陣地で陣地を奪う究極戦略バトル！</div>
+            <div class="game-info">
+                <div class="current-player-info">
+                    <div id="current-player-piece" class="piece black"></div>
+                    <span id="current-player-name">黒プレイヤーのターン</span>
+                </div>
+                <button id="reset-btn" class="btn">ゲームリセット</button>
+                <button id="back-btn" class="btn">メニューに戻る</button>
+            </div>
+        </div>
+
+        <div class="game-layout hidden" id="game-area">
+            <!-- メインボード (8x8) -->
+            <div class="main-game-board">
+                <h2>メインボード (8×8)</h2>
+                <div id="main-board" class="board main-board"></div>
+            </div>
+
+            <!-- ブロックボード (4x4) -->
+            <div class="block-game-board">
+                <h2>ブロックボード (4×4)</h2>
+                <div id="block-board" class="board block-board"></div>
+                <div class="block-legend">
+                    <div class="legend-item">
+                        <div class="piece black"></div>
+                        <span>黒が勝利したブロック</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="piece white"></div>
+                        <span>白が勝利したブロック</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="empty-cell"></div>
+                        <span>未完了ブロック</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="score-panel hidden" id="score-area">
+            <div class="player-score black-player">
+                <div class="player-icon">
+                    <div class="piece black"></div>
+                    <span>黒</span>
+                </div>
+                <div class="score-details">
+                    <div class="main-score">メイン: <span id="black-main-score">2</span></div>
+                    <div class="block-score">ブロック: <span id="black-block-score">0</span></div>
+                </div>
+            </div>
+            <div class="player-score white-player">
+                <div class="player-icon">
+                    <div class="piece white"></div>
+                    <span>白</span>
+                </div>
+                <div class="score-details">
+                    <div class="main-score">メイン: <span id="white-main-score">2</span></div>
+                    <div class="block-score">ブロック: <span id="white-block-score">0</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="rules hidden" id="rules-area">
+            <h3>🔥 戦略ルール 🔥</h3>
+            <ul>
+                <li>🎯 8×8の戦場でリバーシの熱いバトルを展開！</li>
+                <li>⚔️ 戦場は2×2の16陣地に分割！各陣地が新たな戦場となる！</li>
+                <li>🏆 陣地が完全制圧されたら、コマ数で支配者が決定！</li>
+                <li>💥 同数の場合は最後の一撃で陣地を奪取！</li>
+                <li>🔥 制圧した陣地で更なるリバーシバトルが発動！</li>
+                <li>👑 最終的により多くの陣地を支配した者が真の覇者！</li>
+            </ul>
+        </div>
+
+        <div id="game-over-modal" class="modal hidden">
+            <div class="modal-content">
+                <h2>🎊 ゲーム終了！ 🎊</h2>
+                <div id="final-scores"></div>
+                <div id="winner-announcement"></div>
+                <div class="modal-buttons">
+                    <button id="new-game-btn" class="btn">新しいゲーム</button>
+                    <button id="close-modal-btn" class="btn">閉じる</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

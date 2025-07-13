@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ソリティアプラス</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>ソリティアプラス</h1>
+            <p class="subtitle">スキルを駆使してクリアを目指せ！</p>
+        </header>
+
+        <div class="game-info">
+            <div class="score-info">
+                <span class="score">スコア: <span id="score">0</span></span>
+                <span class="moves">手数: <span id="moves">0</span></span>
+                <span class="time">時間: <span id="time">00:00</span></span>
+            </div>
+            <div class="skill-points">
+                <span>スキルポイント: <span id="skill-points">3</span></span>
+            </div>
+        </div>
+
+        <div class="game-board">
+            <!-- ファウンデーション（完成エリア） -->
+            <div class="foundation-area">
+                <div class="foundation-pile" data-suit="hearts">
+                    <div class="foundation-label">♥</div>
+                    <div class="card-slot"></div>
+                </div>
+                <div class="foundation-pile" data-suit="diamonds">
+                    <div class="foundation-label">♦</div>
+                    <div class="card-slot"></div>
+                </div>
+                <div class="foundation-pile" data-suit="clubs">
+                    <div class="foundation-label">♣</div>
+                    <div class="card-slot"></div>
+                </div>
+                <div class="foundation-pile" data-suit="spades">
+                    <div class="foundation-label">♠</div>
+                    <div class="card-slot"></div>
+                </div>
+            </div>
+
+            <!-- テーブルエリア -->
+            <div class="table-area">
+                <!-- テーブルピル（7列） -->
+                <div class="table-piles">
+                    <div class="table-pile" data-pile="0"></div>
+                    <div class="table-pile" data-pile="1"></div>
+                    <div class="table-pile" data-pile="2"></div>
+                    <div class="table-pile" data-pile="3"></div>
+                    <div class="table-pile" data-pile="4"></div>
+                    <div class="table-pile" data-pile="5"></div>
+                    <div class="table-pile" data-pile="6"></div>
+                </div>
+            </div>
+
+            <!-- ストックとウェイスト -->
+            <div class="stock-waste-area">
+                <div class="stock-pile">
+                    <div class="card-slot stock-slot"></div>
+                </div>
+                <div class="waste-pile">
+                    <div class="card-slot waste-slot"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- スキルパネル -->
+        <div class="skills-panel">
+            <h3>スキル</h3>
+            <div class="skills-grid">
+                <button class="skill-btn" id="transform-skill" data-skill="transform">
+                    <div class="skill-icon">🔄</div>
+                    <div class="skill-name">カード変換</div>
+                    <div class="skill-cost">1</div>
+                </button>
+                <button class="skill-btn" id="move-skill" data-skill="move">
+                    <div class="skill-icon">🚀</div>
+                    <div class="skill-name">移動スキル</div>
+                    <div class="skill-cost">2</div>
+                </button>
+                <button class="skill-btn" id="time-stop-skill" data-skill="timeStop">
+                    <div class="skill-icon">⏸️</div>
+                    <div class="skill-name">時間停止</div>
+                    <div class="skill-cost">3</div>
+                </button>
+                <button class="skill-btn" id="reverse-skill" data-skill="reverse">
+                    <div class="skill-icon">↩️</div>
+                    <div class="skill-name">一手戻す</div>
+                    <div class="skill-cost">1</div>
+                </button>
+                <button class="skill-btn" id="shuffle-skill" data-skill="shuffle">
+                    <div class="skill-icon">🔀</div>
+                    <div class="skill-name">シャッフル</div>
+                    <div class="skill-cost">2</div>
+                </button>
+            </div>
+        </div>
+
+        <div class="game-controls">
+            <button id="new-game-btn" class="control-btn">新しいゲーム</button>
+            <button id="undo-btn" class="control-btn">一手戻す</button>
+            <button id="hint-btn" class="control-btn">ヒント</button>
+            <button id="rules-btn" class="control-btn">ルール説明</button>
+        </div>
+
+        <!-- スキル使用モーダル -->
+        <div id="skill-modal" class="modal hidden">
+            <div class="modal-content">
+                <h2 id="skill-modal-title">スキル使用</h2>
+                <div id="skill-modal-body">
+                    <!-- 動的に内容が変更される -->
+                </div>
+                <div class="modal-buttons">
+                    <button id="skill-confirm" class="modal-btn confirm">確認</button>
+                    <button id="skill-cancel" class="modal-btn cancel">キャンセル</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ルール説明モーダル -->
+        <div id="rules-modal" class="modal hidden">
+            <div class="modal-content">
+                <h2>ソリティアプラスのルール</h2>
+                <div class="rules-content">
+                    <h3>基本ルール</h3>
+                    <ul>
+                        <li>通常のソリティアと同じルールでプレイ</li>
+                        <li>エースからキングまで順番に並べる</li>
+                        <li>テーブルでは赤黒交互に降順で並べる</li>
+                    </ul>
+                    
+                    <h3>スキルシステム</h3>
+                    <ul>
+                        <li><strong>カード変換</strong>: 任意のカードの柄を変更</li>
+                        <li><strong>移動スキル</strong>: 重ねられないカードでも移動可能</li>
+                        <li><strong>時間停止</strong>: 一時的に時間を止める</li>
+                        <li><strong>一手戻す</strong>: 最後の一手を戻す</li>
+                        <li><strong>シャッフル</strong>: 残りのカードをシャッフル</li>
+                    </ul>
+                    
+                    <h3>スコアシステム</h3>
+                    <ul>
+                        <li>カード移動: +10点</li>
+                        <li>ファウンデーション完成: +100点</li>
+                        <li>スキル使用: -スキルコスト点</li>
+                        <li>時間ボーナス: 早くクリアするほど高得点</li>
+                    </ul>
+                </div>
+                <button id="close-rules" class="modal-close">閉じる</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html> 
