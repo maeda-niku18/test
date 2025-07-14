@@ -2,57 +2,17 @@ const inputText = document.getElementById('input-text');
 const convertButton = document.getElementById('convert-button');
 const resultText = document.getElementById('result-text');
 
-let tokenizer = null;
-
-// Kuromoji.jsの初期化（GitHub Pages対応）
-const loadKuromoji = () => {
-    console.log("Starting kuromoji initialization...");
-    
-    // GitHub Pages環境を考慮した設定
-    const builder = kuromoji.builder({
-        dicPath: "https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/dict/"
-    });
-    
-    builder.build(function(err, tokenizer_instance) {
-        if (err) {
-            console.error("Primary CDN failed, trying alternative:", err);
-            
-            // フォールバック: unpkg CDN
-            const fallbackBuilder = kuromoji.builder({
-                dicPath: "https://unpkg.com/kuromoji@0.1.2/dict/"
-            });
-            
-            fallbackBuilder.build(function(err2, tokenizer_instance2) {
-                if (err2) {
-                    console.error("All CDN attempts failed:", err2);
-                    inputText.placeholder = "辞書の読み込みに失敗しました。ページをリロードしてください。";
-                    convertButton.textContent = "エラー";
-                    convertButton.disabled = true;
-                    return;
-                }
-                
-                tokenizer = tokenizer_instance2;
-                convertButton.disabled = false;
-                convertButton.textContent = "変換するゾ！";
-                inputText.placeholder = "ここに文章を入力してネ(^_-)-☆";
-                console.log("Kuromoji loaded successfully from fallback CDN");
-            });
-            return;
-        }
-        
-        tokenizer = tokenizer_instance;
+// ページ読み込み後に初期化（kuromoji不要）
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
         convertButton.disabled = false;
         convertButton.textContent = "変換するゾ！";
         inputText.placeholder = "ここに文章を入力してネ(^_-)-☆";
-        console.log("Kuromoji loaded successfully from primary CDN");
     });
-};
-
-// ページ読み込み後に初期化
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', loadKuromoji);
 } else {
-    loadKuromoji();
+    convertButton.disabled = false;
+    convertButton.textContent = "変換するゾ！";
+    inputText.placeholder = "ここに文章を入力してネ(^_-)-☆";
 }
 
 // 感情分析用キーワード辞書
@@ -185,20 +145,13 @@ const analyzeTextComplexity = (text) => {
     };
 };
 
-// 変換処理（雰囲気対応版）
+// 変換処理（kuromoji不要の簡易版）
 const convertToOjisan = (text) => {
-    if (!tokenizer) {
-        return "まだ辞書を読み込んでるから、ちょっと待っててネ！";
-    }
-
     // 文章の感情と複雑さを分析
     const emotion = analyzeEmotion(text);
     const complexity = analyzeTextComplexity(text);
     
     console.log(`分析結果: 感情=${emotion}, 複雑さ=${JSON.stringify(complexity)}`);
-
-    const tokens = tokenizer.tokenize(text);
-    let result = "";
 
     // 感情に応じた変換強度を調整
     const intensityConfig = {
@@ -212,52 +165,44 @@ const convertToOjisan = (text) => {
     };
 
     const config = intensityConfig[emotion];
+    let result = text;
 
-    tokens.forEach(token => {
-        const surface = token.surface_form;
-        const pos = token.pos;
-        const pos_detail = token.pos_detail_1;
-
-        // 読点を感情に応じた絵文字コンボに変換
-        if (pos === '記号' && (surface === '、' || surface === '。')) {
-            const emojiCount = emotion === 'excited' ? 
-                Math.floor(Math.random() * 4) + 2 : // 興奮時は多め
-                emotion === 'sad' || emotion === 'tired' ? 
-                Math.floor(Math.random() * 2) + 1 : // 悲しい・疲れ時は少なめ
-                Math.floor(Math.random() * 3) + 1;
-            
-            for (let i = 0; i < emojiCount; i++) {
-                result += emojis[Math.floor(Math.random() * emojis.length)];
-            }
-            return;
-        }
-
-        let convertedSurface = surface;
-
-        // 感情に応じたカタカナ化確率
-        if (['名詞', '動詞', '形容詞'].includes(pos) && Math.random() < config.katakana) {
-            convertedSurface = toKatakana(surface);
-        }
-        if (['助詞', '助動詞'].includes(pos) && Math.random() < config.katakana * 1.5) {
-            convertedSurface = toKatakana(surface);
-        }
-
-        // 単語の途中に絵文字をねじ込む（感情によって確率調整）
-        const emojiInsertRate = emotion === 'excited' ? 0.3 : 
-                              emotion === 'sad' || emotion === 'tired' ? 0.1 : 0.2;
-        if (convertedSurface.length > 2 && Math.random() < emojiInsertRate) {
-            const insertPos = Math.floor(Math.random() * (convertedSurface.length - 1)) + 1;
-            const emoji = emojis[Math.floor(Math.random() * emojis.length)];
-            convertedSurface = convertedSurface.slice(0, insertPos) + emoji + convertedSurface.slice(insertPos);
-        }
-
-        result += convertedSurface;
-
-        // 感情に応じた絵文字スパム確率
-        if (Math.random() < config.emoji) {
-            result += emojis[Math.floor(Math.random() * emojis.length)];
+    // 簡易的なカタカナ変換（特定の単語）
+    const katakanaTargets = [
+        'だよ', 'です', 'ます', 'した', 'して', 'ある', 'いる', 'なる', 'する',
+        'きた', 'いた', 'った', 'みた', 'った', 'よね', 'かな', 'でも', 'から'
+    ];
+    
+    katakanaTargets.forEach(target => {
+        if (Math.random() < config.katakana) {
+            const katakanaTarget = toKatakana(target);
+            result = result.replace(new RegExp(target, 'g'), katakanaTarget);
         }
     });
+
+    // 句読点を絵文字に変換
+    result = result.replace(/[、。]/g, () => {
+        const emojiCount = emotion === 'excited' ? 
+            Math.floor(Math.random() * 4) + 2 : 
+            emotion === 'sad' || emotion === 'tired' ? 
+            Math.floor(Math.random() * 2) + 1 : 
+            Math.floor(Math.random() * 3) + 1;
+        
+        let emojiStr = '';
+        for (let i = 0; i < emojiCount; i++) {
+            emojiStr += emojis[Math.floor(Math.random() * emojis.length)];
+        }
+        return emojiStr;
+    });
+
+    // ランダムに絵文字を挿入
+    const words = result.split(/(\s+)/);
+    result = words.map(word => {
+        if (word.trim() && Math.random() < config.emoji * 0.3) {
+            return word + emojis[Math.floor(Math.random() * emojis.length)];
+        }
+        return word;
+    }).join('');
 
     // 感情と文章の長さに応じた自分語り挿入
     if (Math.random() < config.interruption && !complexity.isShort) {
