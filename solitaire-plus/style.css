@@ -1,3 +1,23 @@
+
+/* Persona 5 inspired Solitaire Plus Styles */
+
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap');
+
+:root {
+    --p5-red: #E72428;
+    --p5-black: #1A1A1A;
+    --p5-white: #F0F0F0;
+    --p5-gray: #333333;
+    --p5-yellow: #F8D210;
+    --p5-blue: #007BFF; /* For clubs/spades */
+    --p5-dark-blue: #0056b3;
+    --p5-light-gray: #666666;
+    --p5-accent-red: #FF4500; /* A brighter red for accents */
+    --p5-shadow-dark: rgba(0, 0, 0, 0.6);
+    --p5-shadow-light: rgba(255, 255, 255, 0.1);
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -5,128 +25,154 @@
 }
 
 body {
-    font-family: 'Arial', sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    font-family: 'Noto Sans JP', sans-serif;
+    background: var(--p5-black);
     min-height: 100vh;
-    color: #e2e8f0;
+    color: var(--p5-white);
     line-height: 1.6;
+    overflow-x: hidden; /* Prevent horizontal scroll */
+    position: relative;
 }
 
 .container {
     max-width: 1200px;
     margin: 0 auto;
     padding: 20px;
+    position: relative;
+    z-index: 1;
 }
+
+/* Background elements for Persona 5 feel */
+body::before,
+body::after {
+    content: '';
+    position: fixed;
+    width: 120%;
+    height: 120%;
+    background-repeat: no-repeat;
+    background-size: cover;
+    opacity: 0.08;
+    z-index: -1;
+    pointer-events: none;
+}
+
+body::before {
+    top: -10%;
+    left: -10%;
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none"><polygon points="0,0 100,0 100,100" fill="%23E72428"/></svg>');
+    transform: rotate(-15deg);
+    transform-origin: top left;
+}
+
+body::after {
+    bottom: -10%;
+    right: -10%;
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none"><polygon points="0,100 100,100 100,0" fill="%23E72428"/></svg>');
+    transform: rotate(15deg);
+    transform-origin: bottom right;
+}
+
 
 header {
     text-align: center;
     margin-bottom: 30px;
+    position: relative;
+    padding-top: 20px;
 }
 
 header h1 {
-    font-size: 3rem;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 3.8rem;
     font-weight: 700;
-    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: var(--p5-red);
+    text-shadow: 5px 5px 0px var(--p5-yellow), 
+                 8px 8px 0px var(--p5-dark-blue);
     margin-bottom: 10px;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+    letter-spacing: 4px;
+    position: relative;
+    display: inline-block;
+    padding: 0 20px;
+    animation: neonGlow 1.5s ease-in-out infinite alternate;
+}
+
+@keyframes neonGlow {
+    from { text-shadow: 5px 5px 0px var(--p5-yellow), 8px 8px 0px var(--p5-dark-blue); }
+    to { text-shadow: 5px 5px 10px var(--p5-yellow), 8px 8px 15px var(--p5-dark-blue), 0 0 20px var(--p5-red); }
+}
+
+header h1::before, header h1::after {
+    content: '';
+    position: absolute;
+    background: var(--p5-red);
+    height: 4px;
+    width: 40px;
+    top: 50%;
+    transform: translateY(-50%);
+    box-shadow: 0 0 10px var(--p5-red);
+}
+
+header h1::before {
+    left: -50px;
+}
+
+header h1::after {
+    right: -50px;
 }
 
 .subtitle {
-    font-size: 1.2rem;
-    color: #a0aec0;
+    font-size: 1.3rem;
+    color: var(--p5-white);
     font-style: italic;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+    margin-top: 10px;
 }
 
 .game-info {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: rgba(255, 255, 255, 0.1);
-    padding: 15px 20px;
+    background: var(--p5-gray);
+    padding: 18px 25px;
     border-radius: 10px;
-    margin-bottom: 20px;
-    backdrop-filter: blur(10px);
+    margin-bottom: 25px;
+    border: 3px solid var(--p5-red);
+    box-shadow: 0 0 20px rgba(231, 36, 40, 0.6), inset 0 0 10px rgba(231, 36, 40, 0.3);
+    font-family: 'Orbitron', sans-serif;
+    text-transform: uppercase;
 }
 
 .score-info {
     display: flex;
-    gap: 20px;
-    font-size: 0.9rem;
+    gap: 30px;
+    font-size: 1.1rem;
+    font-weight: 700;
 }
 
 .skill-points {
-    font-weight: 600;
-    color: #f093fb;
+    font-weight: 700;
+    color: var(--p5-yellow);
+    font-size: 1.2rem;
+    text-shadow: 1px 1px 5px var(--p5-yellow);
 }
 
 .game-board {
-    display: flex;
-    flex-direction: column;
-    gap: 30px;
-    margin-bottom: 30px;
+    display: grid;
+    grid-template-areas: 
+        "stock waste foundation"
+        "table table table";
+    grid-template-columns: 1fr 1fr 2fr; /* Adjust as needed */
+    gap: 25px;
+    margin-bottom: 35px;
+    align-items: start;
 }
 
-/* ファウンデーションエリア */
-.foundation-area {
-    display: flex;
-    justify-content: center;
-    gap: 20px;
-}
-
-.foundation-pile {
+/* Stock and Waste Area */
+.stock-waste-area {
+    grid-area: stock;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 10px;
-}
-
-.foundation-label {
-    font-size: 1.5rem;
-    color: #ef4444;
-    font-weight: bold;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
-}
-
-.foundation-pile[data-suit="diamonds"] .foundation-label {
-    color: #ef4444;
-}
-
-.foundation-pile[data-suit="clubs"] .foundation-label {
-    color: #3b82f6;
-}
-
-.foundation-pile[data-suit="spades"] .foundation-label {
-    color: #3b82f6;
-}
-
-/* テーブルエリア */
-.table-area {
-    display: flex;
-    justify-content: center;
-}
-
-.table-piles {
-    display: flex;
-    gap: 15px;
-}
-
-.table-pile {
-    min-width: 80px;
-    min-height: 200px;
-    border: 2px dashed rgba(255, 255, 255, 0.3);
-    border-radius: 8px;
-    padding: 10px;
-    position: relative;
-}
-
-/* ストック・ウェイストエリア */
-.stock-waste-area {
-    display: flex;
-    justify-content: center;
-    gap: 30px;
+    gap: 20px;
 }
 
 .stock-pile, .waste-pile {
@@ -136,339 +182,432 @@ header h1 {
     gap: 10px;
 }
 
-/* カードスロット */
+.stock-pile {
+    grid-area: stock;
+}
+
+.waste-pile {
+    grid-area: waste;
+}
+
+/* Foundation Area */
+.foundation-area {
+    grid-area: foundation;
+    display: flex;
+    justify-content: space-around;
+    gap: 15px;
+}
+
+.foundation-pile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.foundation-label {
+    font-size: 2rem;
+    font-weight: bold;
+    text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.7);
+}
+
+.foundation-pile[data-suit="hearts"] .foundation-label,
+.foundation-pile[data-suit="diamonds"] .foundation-label {
+    color: var(--p5-red);
+}
+
+.foundation-pile[data-suit="clubs"] .foundation-label,
+.foundation-pile[data-suit="spades"] .foundation-label {
+    color: var(--p5-blue);
+}
+
+/* Table Area */
+.table-area {
+    grid-area: table;
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
+.table-piles {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    width: 100%;
+}
+
+.table-pile {
+    min-width: 100px; /* Card width + padding */
+    min-height: 180px; /* Enough space for initial cards */
+    border: 3px dashed var(--p5-light-gray);
+    border-radius: 10px;
+    padding: 12px 6px;
+    position: relative;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.4);
+    transition: all 0.3s ease;
+    overflow: hidden; /* Hide overflowing cards */
+}
+
+.table-pile:hover {
+    border-color: var(--p5-red);
+    box-shadow: 0 0 15px rgba(231, 36, 40, 0.7);
+}
+
+/* Card Slot */
 .card-slot {
-    width: 70px;
-    height: 100px;
-    border: 2px dashed rgba(255, 255, 255, 0.3);
-    border-radius: 8px;
+    width: 100px;
+    height: 140px;
+    border: 3px dashed var(--p5-light-gray);
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(0, 0, 0, 0.4);
     transition: all 0.3s ease;
+    position: relative; /* For card positioning */
 }
 
 .card-slot:hover {
-    border-color: rgba(255, 255, 255, 0.6);
-    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--p5-red);
+    background: rgba(231, 36, 40, 0.2);
 }
 
-/* カード */
+/* Card Styles */
 .card {
-    width: 70px;
-    height: 100px;
-    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-    border-radius: 8px;
-    border: 2px solid #374151;
+    width: 100px;
+    height: 140px;
+    background: linear-gradient(145deg, var(--p5-white) 0%, #E0E0E0 100%);
+    border-radius: 10px;
+    border: 4px solid var(--p5-gray);
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.3s ease;
-    position: relative;
+    transition: all 0.2s ease-out;
+    position: absolute; /* For stacking */
     user-select: none;
     font-weight: bold;
-    font-size: 1.2rem;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    font-size: 1.6rem;
+    box-shadow: 0 8px 20px var(--p5-shadow-dark), inset 0 0 10px var(--p5-shadow-light);
+    transform-origin: top center;
+    backface-visibility: hidden; /* Prevent flickering during transform */
 }
 
 .card-content {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 5px;
+    gap: 6px;
 }
 
 .card-rank {
-    font-size: 1.4rem;
+    font-size: 2rem;
     font-weight: bold;
+    font-family: 'Orbitron', sans-serif;
 }
 
 .card-suit {
-    font-size: 1.8rem;
+    font-size: 2.8rem;
     line-height: 1;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
 }
 
-/* テーブルピルの中央スートを少し小さく */
-.table-pile .card-suit {
-    font-size: 1.5rem;
-}
-
-/* カードの角 */
+/* Card Corners */
 .card-corner {
     position: absolute;
     display: flex;
     flex-direction: column;
     align-items: center;
-    font-size: 0.8rem;
+    font-size: 1rem;
     line-height: 1;
+    font-family: 'Orbitron', sans-serif;
+}
+
+.card-corner .corner-rank {
+    font-size: 1.1rem;
+}
+
+.card-corner .corner-suit {
+    font-size: 1.3rem;
 }
 
 .card-corner.top-left {
-    top: 5px;
-    left: 5px;
+    top: 6px;
+    left: 6px;
 }
 
 .card-corner.bottom-right {
-    bottom: 5px;
-    right: 5px;
+    bottom: 6px;
+    right: 6px;
     transform: rotate(180deg);
 }
 
-.corner-rank {
-    font-weight: bold;
-    font-size: 0.9rem;
-}
-
-.corner-suit {
-    font-size: 1rem;
-}
-
-/* テーブルピルのカードの角を調整 */
-.table-pile .card-corner.top-left {
-    top: 3px;
-    left: 3px;
-}
-
-.table-pile .card-corner.bottom-right {
-    bottom: 3px;
-    right: 3px;
-}
-
-.table-pile .corner-rank {
-    font-size: 0.8rem;
-}
-
-.table-pile .corner-suit {
-    font-size: 0.9rem;
-}
-
-/* 重なったカードの角をさらに小さく */
-.table-pile .card:nth-child(n+3) .card-corner.top-left {
-    top: 2px;
-    left: 2px;
-}
-
-.table-pile .card:nth-child(n+3) .card-corner.bottom-right {
-    bottom: 2px;
-    right: 2px;
-}
-
-.table-pile .card:nth-child(n+3) .corner-rank {
-    font-size: 0.7rem;
-}
-
-.table-pile .card:nth-child(n+3) .corner-suit {
-    font-size: 0.8rem;
-}
-
 .card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    transform: translateY(-10px) scale(1.03);
+    box-shadow: 0 18px 30px var(--p5-shadow-dark), inset 0 0 15px var(--p5-shadow-light);
 }
 
 .card.selected {
-    transform: translateY(-10px);
-    box-shadow: 0 15px 30px rgba(240, 147, 251, 0.5);
-    border-color: #f093fb;
+    transform: translateY(-20px) scale(1.07);
+    box-shadow: 0 0 30px var(--p5-yellow), 0 0 60px rgba(248, 210, 16, 0.6), inset 0 0 20px var(--p5-yellow);
+    border-color: var(--p5-yellow);
+    z-index: 100; /* Bring selected card to front */
 }
 
-/* ドラッグ&ドロップスタイル */
+/* Drag & Drop Styles */
 .card.dragging {
-    opacity: 0.5;
-    transform: rotate(5deg);
+    opacity: 0.7;
+    transform: rotate(5deg) scale(1.05);
     z-index: 1000;
 }
 
 .drop-zone-active {
-    background: rgba(240, 147, 251, 0.2) !important;
-    border-color: #f093fb !important;
-    transform: scale(1.05);
+    background: rgba(231, 36, 40, 0.3) !important;
+    border-color: var(--p5-red) !important;
+    transform: scale(1.03);
 }
 
-.card-slot.drop-zone-active,
-.table-pile.drop-zone-active {
-    background: rgba(240, 147, 251, 0.2) !important;
-    border-color: #f093fb !important;
-    transform: scale(1.05);
-}
-
+/* Card Colors */
 .card.red {
-    color: #ef4444;
+    color: var(--p5-red);
 }
 
 .card.red .card-suit,
 .card.red .corner-suit {
-    color: #ef4444;
+    color: var(--p5-red);
 }
 
 .card.red .card-rank,
 .card.red .corner-rank {
-    color: #ef4444;
+    color: var(--p5-red);
 }
 
 .card.black {
-    color: #1f2937;
+    color: var(--p5-black);
 }
 
 .card.black .card-suit,
 .card.black .corner-suit {
-    color: #1f2937;
+    color: var(--p5-blue); /* Black suits in blue for P5 style */
 }
 
 .card.black .card-rank,
 .card.black .corner-rank {
-    color: #1f2937;
+    color: var(--p5-black);
 }
 
 .card.face-down {
-    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-    color: white;
+    background: var(--p5-red);
+    border: 4px solid var(--p5-dark-blue);
+    color: var(--p5-white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3.5rem;
+    text-shadow: 2px 2px 7px rgba(0, 0, 0, 0.6);
+    box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.6), 0 8px 20px var(--p5-shadow-dark);
 }
 
 .card.face-down::before {
-    content: "♠";
-    font-size: 2rem;
+    content: ""; /* Removed P5 text */
+    /* Optional: Add a subtle pattern or icon here if desired, e.g., a stylized star */
+    /* background-image: url('path/to/your/icon.svg'); */
+    /* background-size: contain; */
+    /* width: 60%; */
+    /* height: 60%; */
 }
 
-/* カードスタック */
-.card-stack {
-    position: relative;
-}
-
-.card-stack .card {
+/* Card Stacking in Table Piles */
+.table-pile .card {
     position: absolute;
-    top: 0;
-    left: 0;
+    top: var(--card-offset, 12px); /* Use CSS variable for dynamic offset */
+    left: 50%;
+    transform: translateX(-50%);
+    transition: top 0.2s ease-out, transform 0.2s ease-out, box-shadow 0.2s ease-out, border-color 0.2s ease-out;
 }
 
-.card-stack .card:nth-child(2) { top: 8px; }
-.card-stack .card:nth-child(3) { top: 16px; }
-.card-stack .card:nth-child(4) { top: 24px; }
-.card-stack .card:nth-child(5) { top: 32px; }
-.card-stack .card:nth-child(6) { top: 40px; }
-.card-stack .card:nth-child(7) { top: 48px; }
-.card-stack .card:nth-child(8) { top: 56px; }
-.card-stack .card:nth-child(9) { top: 64px; }
-.card-stack .card:nth-child(10) { top: 72px; }
+.table-pile .card:not(.face-down) {
+    position: absolute;
+    top: var(--card-offset, 12px); /* Dynamic offset */
+    left: 50%;
+    transform: translateX(-50%);
+    transition: top 0.2s ease-out, transform 0.2s ease-out, box-shadow 0.2s ease-out, border-color 0.2s ease-out;
+}
 
-/* スキルパネル */
+/* Skills Panel */
 .skills-panel {
-    background: rgba(255, 255, 255, 0.1);
-    padding: 20px;
-    border-radius: 10px;
-    margin-bottom: 20px;
-    backdrop-filter: blur(10px);
+    background: var(--p5-gray);
+    padding: 25px;
+    border-radius: 12px;
+    margin-bottom: 30px;
+    border: 3px solid var(--p5-red);
+    box-shadow: 0 0 20px rgba(231, 36, 40, 0.6), inset 0 0 10px rgba(231, 36, 40, 0.3);
 }
 
 .skills-panel h3 {
     text-align: center;
-    margin-bottom: 15px;
-    color: #f093fb;
-    font-size: 1.3rem;
+    margin-bottom: 20px;
+    color: var(--p5-yellow);
+    font-size: 1.8rem;
+    font-family: 'Orbitron', sans-serif;
+    text-shadow: 3px 3px 0px var(--p5-dark-blue), 0 0 10px var(--p5-yellow);
 }
 
 .skills-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-    gap: 15px;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 20px;
 }
 
 .skill-btn {
-    background: rgba(255, 255, 255, 0.1);
-    border: 2px solid rgba(255, 255, 255, 0.2);
-    border-radius: 10px;
-    padding: 15px;
+    background: var(--p5-dark-blue);
+    border: 3px solid var(--p5-blue);
+    border-radius: 12px;
+    padding: 18px;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.3s ease-out;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 8px;
-    color: #e2e8f0;
+    gap: 10px;
+    color: var(--p5-white);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
+    position: relative;
+    overflow: hidden;
+}
+
+.skill-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    transition: all 0.5s ease;
+}
+
+.skill-btn:hover::before {
+    left: 100%;
 }
 
 .skill-btn:hover {
-    background: rgba(240, 147, 251, 0.2);
-    border-color: #f093fb;
-    transform: translateY(-3px);
+    background: var(--p5-blue);
+    border-color: var(--p5-yellow);
+    transform: translateY(-7px) scale(1.03);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
 }
 
 .skill-btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
     transform: none;
+    background: var(--p5-light-gray);
+    border-color: var(--p5-gray);
+    box-shadow: none;
 }
 
 .skill-btn:disabled:hover {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.2);
+    background: var(--p5-light-gray);
+    border-color: var(--p5-gray);
     transform: none;
 }
 
 .skill-icon {
-    font-size: 2rem;
+    font-size: 2.5rem;
+    color: var(--p5-yellow);
+    text-shadow: 1px 1px 5px var(--p5-yellow);
 }
 
 .skill-name {
-    font-size: 0.9rem;
-    font-weight: 600;
+    font-size: 1.1rem;
+    font-weight: 700;
+    text-align: center;
+    text-transform: uppercase;
 }
 
 .skill-cost {
-    background: #ef4444;
-    color: white;
+    background: var(--p5-red);
+    color: var(--p5-white);
     border-radius: 50%;
-    width: 20px;
-    height: 20px;
+    width: 28px;
+    height: 28px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.8rem;
+    font-size: 1rem;
     font-weight: bold;
+    border: 2px solid var(--p5-yellow);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
 }
 
-/* ゲームコントロール */
+/* Game Controls */
 .game-controls {
     display: flex;
-    gap: 15px;
+    gap: 25px;
     justify-content: center;
     flex-wrap: wrap;
+    margin-top: 40px;
 }
 
 .control-btn {
-    background: linear-gradient(45deg, #f093fb 0%, #f5576c 100%);
-    color: white;
-    border: none;
-    padding: 12px 25px;
-    border-radius: 25px;
-    font-size: 1rem;
-    font-weight: 600;
+    background: var(--p5-red);
+    color: var(--p5-white);
+    border: 3px solid var(--p5-yellow);
+    padding: 15px 35px;
+    border-radius: 30px;
+    font-size: 1.2rem;
+    font-weight: 700;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.3s ease-out;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    position: relative;
+    overflow: hidden;
+}
+
+.control-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+    transition: all 0.6s ease;
+}
+
+.control-btn:hover::before {
+    left: 100%;
 }
 
 .control-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(240, 147, 251, 0.4);
+    background: var(--p5-dark-blue);
+    border-color: var(--p5-red);
+    transform: translateY(-5px) scale(1.02);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
 }
 
-/* モーダル */
+/* Modals */
 .modal {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.8);
+    background: rgba(0, 0, 0, 0.95);
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 1000;
-    backdrop-filter: blur(5px);
+    z-index: 2000;
+    backdrop-filter: blur(10px);
+    animation: fadeIn 0.4s ease-out;
 }
 
 .modal.hidden {
@@ -476,145 +615,419 @@ header h1 {
 }
 
 .modal-content {
-    background: white;
+    background: var(--p5-gray);
     border-radius: 15px;
-    padding: 30px;
-    max-width: 500px;
+    padding: 35px;
+    max-width: 650px;
     width: 90%;
-    border: 2px solid #f093fb;
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+    border: 4px solid var(--p5-red);
+    box-shadow: 0 0 35px rgba(231, 36, 40, 0.8), inset 0 0 15px rgba(231, 36, 40, 0.4);
+    color: var(--p5-white);
+    position: relative;
+    animation: slideIn 0.5s ease-out;
 }
 
 .modal-content h2 {
     text-align: center;
-    margin-bottom: 20px;
-    color: #333;
+    margin-bottom: 25px;
+    color: var(--p5-yellow);
+    font-family: 'Orbitron', sans-serif;
+    font-size: 2.2rem;
+    text-shadow: 3px 3px 0px var(--p5-dark-blue), 0 0 10px var(--p5-yellow);
 }
 
 .modal-buttons {
     display: flex;
-    gap: 15px;
+    gap: 25px;
     justify-content: center;
-    margin-top: 20px;
+    margin-top: 35px;
 }
 
 .modal-btn {
-    padding: 10px 20px;
+    padding: 15px 30px;
     border: none;
-    border-radius: 8px;
-    font-size: 1rem;
-    font-weight: 600;
+    border-radius: 30px;
+    font-size: 1.1rem;
+    font-weight: 700;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.3s ease-out;
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
 
 .modal-btn.confirm {
-    background: linear-gradient(45deg, #f093fb 0%, #f5576c 100%);
-    color: white;
+    background: var(--p5-red);
+    color: var(--p5-white);
+    border: 3px solid var(--p5-yellow);
 }
 
 .modal-btn.cancel {
-    background: #6b7280;
-    color: white;
+    background: var(--p5-light-gray);
+    color: var(--p5-white);
+    border: 3px solid var(--p5-gray);
 }
 
 .modal-btn:hover {
-    transform: translateY(-2px);
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
 }
 
 .modal-close {
-    background: #ef4444;
-    color: white;
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: var(--p5-red);
+    color: var(--p5-white);
     border: none;
-    padding: 10px 20px;
-    border-radius: 8px;
-    font-size: 1rem;
-    font-weight: 600;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    font-size: 1.8rem;
+    font-weight: bold;
     cursor: pointer;
-    transition: all 0.3s ease;
-    margin-top: 20px;
+    transition: all 0.3s ease-out;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
 }
 
 .modal-close:hover {
-    background: #dc2626;
-    transform: translateY(-2px);
+    background: var(--p5-dark-blue);
+    transform: rotate(180deg) scale(1.1);
 }
 
-/* ルール説明 */
+/* Rules Content */
 .rules-content h3 {
-    color: #f093fb;
-    margin: 15px 0 10px 0;
+    color: var(--p5-yellow);
+    margin: 18px 0 12px 0;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.5rem;
+    text-shadow: 2px 2px 0px var(--p5-dark-blue);
 }
 
 .rules-content ul {
-    margin-left: 20px;
-    margin-bottom: 15px;
+    margin-left: 30px;
+    margin-bottom: 18px;
+    list-style-type: '★ '; /* Custom bullet point */
 }
 
 .rules-content li {
-    margin-bottom: 5px;
+    margin-bottom: 8px;
 }
 
-/* レスポンシブデザイン */
+/* Skill Modal Specifics */
+.suit-selection {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 25px;
+}
+
+.suit-btn {
+    background: var(--p5-dark-blue);
+    color: var(--p5-white);
+    border: 3px solid var(--p5-blue);
+    padding: 12px 18px;
+    border-radius: 10px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: all 0.3s ease-out;
+    text-transform: uppercase;
+}
+
+.suit-btn:hover {
+    background: var(--p5-blue);
+    border-color: var(--p5-yellow);
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+/* Time Stop Effect */
+body.time-stopped {
+    filter: grayscale(100%) brightness(0.7);
+    transition: filter 0.5s ease-in-out;
+}
+
+/* Keyframe Animations */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideIn {
+    from { transform: translateY(-80px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes cardTransform {
+    0% { transform: scale(1); border-color: var(--p5-yellow); }
+    50% { transform: scale(1.1) rotateY(180deg); border-color: var(--p5-red); }
+    100% { transform: scale(1); border-color: var(--p5-gray); }
+}
+
+.card-transformed {
+    animation: cardTransform 0.5s ease-in-out;
+}
+
+@keyframes cardTransform {
+    0% { transform: scale(1); border-color: var(--p5-yellow); }
+    50% { transform: scale(1.1) rotateY(180deg); border-color: var(--p5-red); }
+    100% { transform: scale(1); border-color: var(--p5-gray); }
+}
+
+.card-transformed {
+    animation: cardTransform 0.5s ease-in-out;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .game-board {
+        grid-template-areas: 
+            "stock waste"
+            "foundation foundation"
+            "table table";
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .foundation-area {
+        justify-content: center;
+        margin-top: 25px;
+    }
+}
+
 @media (max-width: 768px) {
     .container {
-        padding: 10px;
+        padding: 15px;
     }
     
     header h1 {
-        font-size: 2rem;
+        font-size: 2.8rem;
+        letter-spacing: 2px;
     }
     
+    header h1::before, header h1::after {
+        width: 30px;
+        left: -35px;
+        right: -35px;
+    }
+
+    .subtitle {
+        font-size: 1.1rem;
+    }
+
+    .game-info {
+        flex-direction: column;
+        gap: 12px;
+        padding: 15px 20px;
+    }
+    
+    .score-info {
+        gap: 20px;
+        font-size: 1rem;
+    }
+
+    .skill-points {
+        font-size: 1.1rem;
+    }
+
+    .game-board {
+        grid-template-areas: 
+            "stock waste"
+            "foundation foundation"
+            "table table";
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+
     .table-piles {
-        gap: 10px;
+        gap: 15px;
+        flex-wrap: wrap; /* Allow piles to wrap */
+        justify-content: center;
     }
     
     .table-pile {
-        min-width: 60px;
-        min-height: 90px;
+        min-width: 90px;
+        min-height: 150px;
+        padding: 10px 5px;
     }
     
+    .card-slot {
+        width: 90px;
+        height: 130px;
+    }
+
     .card {
-        width: 60px;
-        height: 90px;
+        width: 90px;
+        height: 130px;
+        font-size: 1.4rem;
+    }
+
+    .card-rank {
+        font-size: 1.7rem;
+    }
+
+    .card-suit {
+        font-size: 2.3rem;
+    }
+
+    .card-corner {
+        font-size: 0.9rem;
+    }
+
+    .card-corner .corner-rank {
         font-size: 1rem;
     }
     
+    .card-corner .corner-suit {
+        font-size: 1.2rem;
+    }
+
     .skills-grid {
-        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-        gap: 10px;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 15px;
     }
     
     .skill-btn {
-        padding: 10px;
+        padding: 15px;
     }
     
     .skill-icon {
-        font-size: 1.5rem;
+        font-size: 2.2rem;
     }
     
     .skill-name {
-        font-size: 0.8rem;
+        font-size: 1rem;
+    }
+
+    .skill-cost {
+        width: 25px;
+        height: 25px;
+        font-size: 0.9rem;
+    }
+
+    .control-btn {
+        padding: 12px 25px;
+        font-size: 1.1rem;
+    }
+
+    .modal-content {
+        padding: 25px;
+    }
+
+    .modal-content h2 {
+        font-size: 1.8rem;
+    }
+
+    .modal-btn {
+        padding: 12px 25px;
+        font-size: 1rem;
+    }
+
+    .modal-close {
+        width: 35px;
+        height: 35px;
+        font-size: 1.5rem;
     }
 }
 
 @media (max-width: 480px) {
-    .game-info {
-        flex-direction: column;
-        gap: 10px;
+    header h1 {
+        font-size: 2.2rem;
+        letter-spacing: 1px;
     }
-    
+    header h1::before, header h1::after {
+        width: 25px;
+        left: -30px;
+        right: -30px;
+    }
+
+    .subtitle {
+        font-size: 0.9rem;
+    }
+
+    .game-info {
+        padding: 10px 15px;
+    }
+
     .score-info {
+        font-size: 0.9rem;
         flex-direction: column;
         gap: 5px;
-        text-align: center;
     }
-    
-    .foundation-area {
-        gap: 10px;
+
+    .skill-points {
+        font-size: 1rem;
     }
-    
-    .stock-waste-area {
-        gap: 20px;
+
+    .game-board {
+        grid-template-areas: 
+            "stock"
+            "waste"
+            "foundation"
+            "table";
+        grid-template-columns: 1fr;
+        gap: 15px;
     }
-} 
+
+    .stock-waste-area, .foundation-area {
+        flex-direction: row;
+        justify-content: center;
+        gap: 15px;
+    }
+
+    .table-piles {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .table-pile {
+        width: 100%;
+        max-width: 100px; /* Limit individual pile width */
+        min-height: 120px;
+    }
+
+    .card-slot {
+        width: 80px;
+        height: 110px;
+    }
+
+    .card {
+        width: 80px;
+        height: 110px;
+        font-size: 1.2rem;
+    }
+
+    .card-rank {
+        font-size: 1.5rem;
+    }
+
+    .card-suit {
+        font-size: 2rem;
+    }
+
+    .skills-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .control-btn {
+        width: 100%;
+        max-width: 220px;
+        padding: 10px 20px;
+        font-size: 1rem;
+    }
+
+    .modal-content {
+        padding: 20px;
+    }
+
+    .modal-content h2 {
+        font-size: 1.5rem;
+    }
+
+    .modal-btn {
+        padding: 10px 20px;
+        font-size: 0.9rem;
+    }
+}

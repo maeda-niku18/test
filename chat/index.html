@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firestore チャットアプリ</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Firestore チャットアプリ</h1>
+        </div>
+
+        <!-- ユーザー名登録画面 -->
+        <div id="username-screen" class="screen active">
+            <div class="username-input">
+                <h2>ユーザー名を登録してください</h2>
+                <div>
+                    <input type="text" id="username-input" placeholder="ユーザー名を入力" maxlength="20">
+                    <br>
+                    <input type="text" id="user-number-input" placeholder="5桁の番号を入力" maxlength="5" pattern="[0-9]{5}">
+                    <br>
+                    <p class="user-id-note">※ユーザー名と5桁番号の組み合わせで同一ユーザーとして認識されます</p>
+                    <button onclick="setUsername()">登録</button>
+                </div>
+                <div id="username-error" class="error"></div>
+            </div>
+        </div>
+
+        <!-- 部屋一覧画面 -->
+        <div id="rooms-screen" class="screen">
+            <h2>チャットルーム一覧</h2>
+            <div id="room-list" class="room-list">
+                <div class="room-item" onclick="joinRoom('general')">
+                    <h3>一般チャット</h3>
+                    <p>誰でも参加できる一般的なチャットルームです</p>
+                </div>
+                <div class="room-item" onclick="joinRoom('random')">
+                    <h3>雑談ルーム</h3>
+                    <p>自由に雑談できるルームです</p>
+                </div>
+                <div class="room-item" onclick="joinRoom('tech')">
+                    <h3>技術討論</h3>
+                    <p>技術に関する議論をするルームです</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- チャット画面 -->
+        <div id="chat-screen" class="screen">
+            <div class="chat-container">
+                <div class="chat-header">
+                    <button class="back-btn" onclick="backToRooms()">← 部屋一覧に戻る</button>
+                    <h3 id="room-title">チャットルーム</h3>
+                    <div>
+                        <span id="user-info"></span>
+                        <button class="back-btn" onclick="resetUser()" style="margin-left: 0.5rem; font-size: 0.8rem; padding: 0.5rem;">ユーザー変更</button>
+                    </div>
+                </div>
+                
+                <div id="messages-container" class="messages-container">
+                    <!-- メッセージがここに表示される -->
+                </div>
+                
+                <div class="input-container">
+                    <div class="input-group">
+                        <button onclick="toggleStampMenu()" class="stamp-btn">😊</button>
+                        <input type="text" id="message-input" class="message-input" placeholder="メッセージを入力..." maxlength="500">
+                        <button onclick="sendMessage()" class="send-btn">送信</button>
+                    </div>
+                    
+                    <!-- スタンプ選択メニュー -->
+                    <div id="stamp-menu" class="stamp-menu">
+                        <div class="stamp-grid" id="stamp-grid">
+                            <!-- スタンプがここに動的に読み込まれます -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- リアクション選択メニュー -->
+        <div id="reaction-menu" class="reaction-menu">
+            <span class="reaction-btn" onclick="addReaction('👍')">👍</span>
+            <span class="reaction-btn" onclick="addReaction('☺️')">☺️</span>
+            <span class="reaction-btn" onclick="addReaction('😭')">😭</span>
+        </div>
+    </div>
+
+    <script type="module" src="script.js"></script>
+</body>
+</html>

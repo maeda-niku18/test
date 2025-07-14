@@ -35,9 +35,11 @@ class SolitairePlus {
         const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10'];
         
         this.deck = [];
+        let cardId = 0;
         suits.forEach(suit => {
             ranks.forEach(rank => {
                 this.deck.push({
+                    id: cardId++,
                     suit: suit,
                     rank: rank,
                     value: this.getCardValue(rank),
@@ -229,6 +231,16 @@ class SolitairePlus {
             if (this.selectedCard) {
                 this.selectedCard.card.suit = selectedSuit;
                 this.selectedCard.card.color = (selectedSuit === 'hearts' || selectedSuit === 'diamonds') ? 'red' : 'black';
+                
+                // Add a class for animation
+                const transformedCardElement = this.getCardElement(this.selectedCard.card, this.selectedCard.location, this.selectedCard.index);
+                if (transformedCardElement) {
+                    transformedCardElement.classList.add('card-transformed');
+                    setTimeout(() => {
+                        transformedCardElement.classList.remove('card-transformed');
+                    }, 500); // Animation duration
+                }
+
                 this.skillPoints--;
                 this.updateSkillButtons();
                 this.updateDisplay();
@@ -361,7 +373,32 @@ class SolitairePlus {
 
     // カード要素を取得
     getCardElement(card, location, index) {
-        // 実装省略（DOMからカード要素を取得）
+        let parentElement;
+        if (location === 'table') {
+            parentElement = document.querySelector(`[data-pile="${index}"]`);
+        } else if (location === 'waste') {
+            parentElement = document.querySelector('.waste-slot');
+        } else if (location === 'foundation') {
+            const suits = ['hearts', 'diamonds', 'clubs', 'spades'];
+            const suit = suits[index];
+            parentElement = document.querySelector(`[data-suit="${suit}"] .card-slot`);
+        }
+
+        if (parentElement) {
+            // Find the specific card element within the parent
+            // This assumes card elements have a way to identify them, e.g., data attributes or unique content
+            // For simplicity, we'll just return the last card in the pile for now.
+            // A more robust solution would involve unique IDs for each card element.
+            const cardElements = parentElement.querySelectorAll('.card');
+            if (cardElements.length > 0) {
+                for (let i = 0; i < cardElements.length; i++) {
+                    const element = cardElements[i];
+                    if (parseInt(element.dataset.cardId) === card.id) {
+                        return element;
+                    }
+                }
+            }
+        }
         return null;
     }
 
@@ -398,23 +435,8 @@ class SolitairePlus {
             
             pile.forEach((card, cardIndex) => {
                 const cardElement = this.createCardElement(card);
-                cardElement.style.top = `${cardIndex * 15}px`;
+                cardElement.style.setProperty('--card-offset', `${cardIndex * 25}px`); // Adjust this value for desired overlap
                 cardElement.style.zIndex = cardIndex;
-                
-                // テーブルピルのカードは重なりを考慮してサイズ調整
-                if (cardIndex > 0) {
-                    cardElement.style.width = '65px';
-                    cardElement.style.height = '90px';
-                    cardElement.style.fontSize = '1rem';
-                    
-                    // 重なりが多い場合はさらに小さく
-                    if (cardIndex > 3) {
-                        cardElement.style.width = '60px';
-                        cardElement.style.height = '85px';
-                        cardElement.style.fontSize = '0.9rem';
-                    }
-                }
-                
                 pileElement.appendChild(cardElement);
             });
         });
@@ -447,6 +469,7 @@ class SolitairePlus {
     createCardElement(card) {
         const cardElement = document.createElement('div');
         cardElement.className = 'card';
+        cardElement.dataset.cardId = card.id; // Set unique ID
         
         if (card.faceUp === false) {
             cardElement.classList.add('face-down');
@@ -488,6 +511,29 @@ class SolitairePlus {
         cardElement.draggable = true;
         cardElement.addEventListener('dragstart', (e) => this.handleDragStart(e, card));
         cardElement.addEventListener('dragend', (e) => this.handleDragEnd(e));
+
+        // Add click event for card selection
+        cardElement.addEventListener('click', (e) => {
+            // Determine location and index based on parent elements
+            let location = null;
+            let index = -1;
+
+            const parentPile = e.target.closest('.table-pile');
+            if (parentPile) {
+                location = 'table';
+                index = parseInt(parentPile.dataset.pile);
+            } else if (e.target.closest('.waste-slot')) {
+                location = 'waste';
+                index = 0; // Waste pile is a single entity
+            } else if (e.target.closest('.foundation-pile')) {
+                location = 'foundation';
+                index = ['hearts', 'diamonds', 'clubs', 'spades'].indexOf(e.target.closest('.foundation-pile').dataset.suit);
+            }
+
+            if (location) {
+                this.handleCardClick(card, location, index);
+            }
+        });
         
         return cardElement;
     }
