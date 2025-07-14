@@ -4,50 +4,48 @@ const resultText = document.getElementById('result-text');
 
 let tokenizer = null;
 
-// Kuromoji.jsの初期化（絶対URLで辞書を読み込み）
+// Kuromoji.jsの初期化（GitHub Pages対応）
 const loadKuromoji = () => {
-    const dicPaths = [
-        "https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/dict/",
-        "https://unpkg.com/kuromoji@0.1.2/dict/"
-    ];
+    console.log("Starting kuromoji initialization...");
     
-    let pathIndex = 0;
+    // GitHub Pages環境を考慮した設定
+    const builder = kuromoji.builder({
+        dicPath: "https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/dict/"
+    });
     
-    const tryLoad = () => {
-        if (pathIndex >= dicPaths.length) {
-            console.error("All dictionary paths failed");
-            inputText.placeholder = "辞書の読み込みに失敗しました。ページをリロードしてください。";
-            convertButton.textContent = "エラー";
+    builder.build(function(err, tokenizer_instance) {
+        if (err) {
+            console.error("Primary CDN failed, trying alternative:", err);
+            
+            // フォールバック: unpkg CDN
+            const fallbackBuilder = kuromoji.builder({
+                dicPath: "https://unpkg.com/kuromoji@0.1.2/dict/"
+            });
+            
+            fallbackBuilder.build(function(err2, tokenizer_instance2) {
+                if (err2) {
+                    console.error("All CDN attempts failed:", err2);
+                    inputText.placeholder = "辞書の読み込みに失敗しました。ページをリロードしてください。";
+                    convertButton.textContent = "エラー";
+                    convertButton.disabled = true;
+                    return;
+                }
+                
+                tokenizer = tokenizer_instance2;
+                convertButton.disabled = false;
+                convertButton.textContent = "変換するゾ！";
+                inputText.placeholder = "ここに文章を入力してネ(^_-)-☆";
+                console.log("Kuromoji loaded successfully from fallback CDN");
+            });
             return;
         }
         
-        console.log(`Trying to load dictionary from: ${dicPaths[pathIndex]}`);
-        
-        const builder = kuromoji.builder({
-            dicPath: dicPaths[pathIndex]
-        });
-        
-        // 明示的に絶対URLを使用するように設定
-        if (typeof builder.dic_path !== 'undefined') {
-            builder.dic_path = dicPaths[pathIndex];
-        }
-        
-        builder.build(function(err, t) {
-            if (err) {
-                console.error(`Dictionary load failed for ${dicPaths[pathIndex]}:`, err);
-                pathIndex++;
-                setTimeout(tryLoad, 1000); // 1秒後に次のパスを試行
-                return;
-            }
-            tokenizer = t;
-            convertButton.disabled = false;
-            convertButton.textContent = "変換するゾ！";
-            inputText.placeholder = "ここに文章を入力してネ(^_-)-☆";
-            console.log("Kuromoji.js loaded successfully from:", dicPaths[pathIndex]);
-        });
-    };
-    
-    tryLoad();
+        tokenizer = tokenizer_instance;
+        convertButton.disabled = false;
+        convertButton.textContent = "変換するゾ！";
+        inputText.placeholder = "ここに文章を入力してネ(^_-)-☆";
+        console.log("Kuromoji loaded successfully from primary CDN");
+    });
 };
 
 // ページ読み込み後に初期化
