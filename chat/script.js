@@ -20,7 +20,7 @@ let selectedMessageId = null;
 let stampList = [];
 
 // ページ読み込み時にlocalStorageからユーザー情報を復元とスタンプ読み込み
-window.addEventListener('load', function() {
+window.addEventListener('load', async function() {
     const savedUser = localStorage.getItem('chatUser');
     if (savedUser) {
         try {
@@ -41,6 +41,9 @@ window.addEventListener('load', function() {
     
     // スタンプを読み込み
     loadStamps();
+    
+    // NGワードフィルターを初期化（確実に読み込むまで待機）
+    await initializeNGFilterWithRetry();
 });
 
 // スタンプを動的に読み込む関数
@@ -252,9 +255,49 @@ window.sendMessage = async function() {
     const messageInput = document.getElementById('message-input');
     const message = messageInput.value.trim();
     
-    if (!message || !currentUser || !currentRoom) return;
+    console.log('メッセージ送信開始:', message);
+    
+    if (!message || !currentUser || !currentRoom) {
+        console.log('送信条件不足:', { message, currentUser, currentRoom });
+        return;
+    }
+
+    // NGワードチェック
+    console.log('NGフィルター状態:', {
+        exists: !!window.ngFilter,
+        initialized: window.ngFilter?.isInitialized
+    });
+    
+    if (window.ngFilter && window.ngFilter.isInitialized) {
+        console.log('NGワードチェック実行中...');
+        const checkResult = window.ngFilter.checkMessage(message);
+        console.log('チェック結果:', checkResult);
+        
+        if (!checkResult.isClean) {
+            console.log('NGワード検出！送信を阻止します');
+            
+            // NGワードが検出された場合 - メッセージ送信を完全に阻止
+            showNGWordError(checkResult.detectedWords);
+            
+            // 入力欄を赤くして警告
+            messageInput.style.borderColor = '#e53e3e';
+            messageInput.style.backgroundColor = '#fed7d7';
+            
+            // 2秒後に元に戻す
+            setTimeout(() => {
+                messageInput.style.borderColor = '#e2e8f0';
+                messageInput.style.backgroundColor = 'white';
+            }, 2000);
+            
+            return; // ここで完全に処理を終了
+        }
+        console.log('NGワードチェック通過');
+    } else {
+        console.warn('NGフィルターが初期化されていません');
+    }
 
     try {
+        console.log('Firestore送信開始');
         await addDoc(collection(db, 'rooms', currentRoom, 'messages'), {
             text: message,
             userId: currentUser.id,
@@ -264,11 +307,79 @@ window.sendMessage = async function() {
             reactions: {}
         });
         
+        console.log('メッセージ送信成功');
         messageInput.value = '';
     } catch (error) {
         console.error('メッセージ送信エラー:', error);
     }
 };
+
+// NGフィルター初期化（リトライ機能付き）
+async function initializeNGFilterWithRetry() {
+    let retryCount = 0;
+    const maxRetries = 10;
+    
+    while (retryCount < maxRetries) {
+        if (window.initializeNGFilter) {
+            console.log('NGフィルター初期化開始');
+            try {
+                await window.initializeNGFilter();
+                console.log('NGフィルター初期化完了');
+                return;
+            } catch (error) {
+                console.error('NGフィルター初期化エラー:', error);
+            }
+        }
+        
+        console.log(`NGフィルター初期化待機中... (${retryCount + 1}/${maxRetries})`);
+        retryCount++;
+        await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    
+    console.error('NGフィルターの初期化に失敗しました');
+}
+
+// NGワードエラー表示専用関数
+function showNGWordError(detectedWords) {
+    // 既存のエラーメッセージを削除
+    const existingError = document.querySelector('.ng-word-error');
+    if (existingError) {
+        existingError.remove();
+    }
+    
+    // 新しいエラーメッセージを作成
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'error ng-word-error';
+    errorDiv.style.position = 'fixed';
+    errorDiv.style.top = '20px';
+    errorDiv.style.left = '50%';
+    errorDiv.style.transform = 'translateX(-50%)';
+    errorDiv.style.zIndex = '1000';
+    errorDiv.textContent = `🚫 不適切な表現が含まれています: ${detectedWords.join(', ')}`;
+    
+    document.body.appendChild(errorDiv);
+    
+    // 5秒後に自動で削除
+    setTimeout(() => {
+        if (errorDiv.parentNode) {
+            errorDiv.remove();
+        }
+    }, 5000);
+}
+
+// エラー表示用の要素を作成
+function createErrorElement() {
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'error ng-word-error';
+    errorDiv.style.position = 'fixed';
+    errorDiv.style.top = '20px';
+    errorDiv.style.left = '50%';
+    errorDiv.style.transform = 'translateX(-50%)';
+    errorDiv.style.zIndex = '1000';
+    errorDiv.style.display = 'none';
+    document.body.appendChild(errorDiv);
+    return errorDiv;
+}
 
 function loadMessages() {
     if (messagesUnsubscribe) {

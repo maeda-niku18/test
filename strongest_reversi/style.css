@@ -1,0 +1,91 @@
+body {
+    font-family: sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start; /* Align items to the top */
+    height: 100vh;
+    margin: 0;
+    background-color: #f0f0f0;
+    padding-top: 20px; /* Add some padding at the top */
+}
+
+.container {
+    display: flex;
+    gap: 20px;
+}
+
+.game-area {
+    text-align: center;
+}
+
+#board {
+    display: grid;
+    grid-template-columns: repeat(8, 50px);
+    grid-template-rows: repeat(8, 50px);
+    gap: 2px;
+    background-color: #444;
+    border: 5px solid #444;
+    margin-top: 10px;
+}
+
+.sidebar {
+    width: 200px;
+    text-align: center;
+}
+
+.cell {
+    width: 50px;
+    height: 50px;
+    background-color: #008000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.piece {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+}
+
+.black {
+    background-color: black;
+}
+
+.white {
+    background-color: white;
+    border: 1px solid black;
+}
+
+.red {
+    background-color: red;
+}
+
+.hidden {
+    display: none;
+}
+
+.roulette {
+    width: 100px;
+    height: 100px;
+    border: 2px solid #333;
+    margin: 20px auto;
+    overflow: hidden;
+    position: relative;
+}
+
+.roulette-inner {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+}
+
+.roulette-inner.animate {
+    animation: spin 0.5s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: translateY(-80%); } /* 5 pieces, so 100% / 5 = 20%, 100% - 20% = 80% */
+    to { transform: translateY(0); }
+}

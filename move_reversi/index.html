@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Move Reversi</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔄 Move Reversi 🔄</h1>
+            <div class="subtitle">コマを打つたびに全体が移動するリバーシ！</div>
+            <div class="game-info">
+                <div class="current-player-info">
+                    <div id="current-player-piece" class="piece black"></div>
+                    <span id="current-player-name">黒プレイヤーのターン</span>
+                </div>
+                <button id="reset-btn" class="btn">ゲームリセット</button>
+            </div>
+        </div>
+
+        <div class="game-layout">
+            <div class="main-game-board">
+                <h2>Move Reversi Board (8×8)</h2>
+                <div class="move-direction-display">
+                    <div id="next-move-direction" class="direction-arrow">
+                        <span class="direction-text">次の移動方向</span>
+                        <div class="arrow-icon" id="arrow-icon">⬆️</div>
+                    </div>
+                </div>
+                <div id="main-board" class="board main-board"></div>
+            </div>
+
+            <div class="score-panel">
+                <div class="player-score black-player">
+                    <div class="player-icon">
+                        <div class="piece black"></div>
+                        <span>黒</span>
+                    </div>
+                    <div class="score-details">
+                        <div class="main-score">スコア: <span id="black-score">2</span></div>
+                    </div>
+                </div>
+                <div class="player-score white-player">
+                    <div class="player-icon">
+                        <div class="piece white"></div>
+                        <span>白</span>
+                    </div>
+                    <div class="score-details">
+                        <div class="main-score">スコア: <span id="white-score">2</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="rules">
+            <h3>🎮 ゲームルール 🎮</h3>
+            <ul>
+                <li>🎯 8×8のボードで通常のリバーシを行います</li>
+                <li>🔄 コマを置くたびに、全コマがランダムな方向に移動します</li>
+                <li>⬆️ 移動方向は事前に矢印で表示されます</li>
+                <li>🏃 移動時は空白を詰めて壁まで移動します</li>
+                <li>⚫ ひっくり返しはコマを置いた瞬間のみ実行されます</li>
+                <li>🏆 最終的により多くのコマを持つプレイヤーが勝利！</li>
+            </ul>
+        </div>
+
+        <div id="game-over-modal" class="modal hidden">
+            <div class="modal-content">
+                <h2>🎊 ゲーム終了！ 🎊</h2>
+                <div id="final-scores"></div>
+                <div id="winner-announcement"></div>
+                <div class="modal-buttons">
+                    <button id="new-game-btn" class="btn">新しいゲーム</button>
+                    <button id="close-modal-btn" class="btn">閉じる</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

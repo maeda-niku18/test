@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>おじさん構文ジェネレーター</title>
     <link rel="stylesheet" href="style.css">
-    <script src="https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/build/kuromoji.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/build/kuromoji.min.js" 
+            onerror="this.onerror=null; this.src='https://unpkg.com/kuromoji@0.1.2/build/kuromoji.min.js'"></script>
 </head>
 <body>
     <div class="container">
@@ -19,7 +20,6 @@
                 <p id="result-text">ここに変換結果が表示されるヨ！</p>
             </div>
         </div>
-        <button id="back-button" class="back-button">メニューに戻る</button>
     </div>
     <script src="script.js"></script>
 </body>

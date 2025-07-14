@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>最強のCPUを目押しで倒そう！</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="game-area">
+            <h1>最強のCPUを目押しで倒そう！</h1>
+            <div class="game-info">
+                <div id="player-turn">黒のターン</div>
+                <div class="score">黒: <span id="black-score">2</span> | 白: <span id="white-score">2</span></div>
+            </div>
+            <div id="board"></div>
+            <div id="game-over-message" class="hidden">
+                <h2>ゲーム終了</h2>
+                <p id="winner-message"></p>
+                <button id="reset-button">もう一度プレイ</button>
+            </div>
+        </div>
+        <div class="sidebar">
+            <div class="controls">
+                <button id="special-ability-button">目押しルーレット (残り: <span id="special-ability-count">5</span>回)</button>
+            </div>
+            <div id="roulette-container">
+                <h2>ルーレット</h2>
+                <div class="roulette">
+                    <div class="roulette-inner">
+                        <div class="piece black"></div>
+                        <div class="piece white"></div>
+                        <div class="piece red"></div>
+                        <div class="piece white"></div>
+                        <div class="piece white"></div>
+                    </div>
+                </div>
+                <button id="roulette-stop-button" disabled>ストップ</button>
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+    <script src="ai.js"></script>
+</body>
+</html>
