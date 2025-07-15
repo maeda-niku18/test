@@ -67,6 +67,15 @@
         <h1>📱 ISBN スキャナー</h1>
         <p>書籍のバーコード（ISBN）をカメラで読み取ってください</p>
         
+        <div class="card" style="background: #fff3cd; border: 1px solid #ffeaa7; margin-bottom: 1rem;">
+            <p style="margin: 0; font-size: 0.9rem; color: #856404;">
+                📋 <strong>カメラ使用について：</strong><br>
+                • ブラウザがカメラのアクセス許可を求めたら「許可」を選択してください<br>
+                • HTTPSでないサイトではカメラが使用できない場合があります<br>
+                • カメラが起動しない場合は、ブラウザの設定を確認してください
+            </p>
+        </div>
+        
         <div class="card">
             <video id="video" playsinline></video>
             
@@ -95,65 +104,184 @@
         let availableDevices = [];
 
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('📱 Scanner page loaded');
+            console.log('🌐 User Agent:', navigator.userAgent);
+            console.log('🔒 Protocol:', window.location.protocol);
+            console.log('🏠 Host:', window.location.host);
+            console.log('🔧 Secure Context:', window.isSecureContext);
+            
+            // 基本的な環境チェック
+            if (!window.isSecureContext && window.location.protocol !== 'file:') {
+                console.warn('⚠️ Not in secure context (HTTPS required for camera access)');
+                showError('カメラアクセスにはHTTPS接続が必要です。');
+                return;
+            }
+            
             initializeScanner();
         });
 
         async function initializeScanner() {
             try {
+                console.log('🔍 Scanner initialization started...');
+                
+                // ZXingライブラリの確認
+                if (typeof ZXing === 'undefined') {
+                    console.error('❌ ZXing library not loaded');
+                    showError('QRコードライブラリが読み込まれていません。');
+                    return;
+                }
+                console.log('✅ ZXing library loaded');
+                
+                // MediaDevices APIの確認
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    console.error('❌ MediaDevices API not supported');
+                    showError('このブラウザではカメラAPIがサポートされていません。');
+                    return;
+                }
+                console.log('✅ MediaDevices API supported');
+                
                 codeReader = new ZXing.BrowserMultiFormatReader();
+                console.log('✅ BrowserMultiFormatReader created');
                 
                 // カメラデバイスを取得
+                console.log('🔍 Getting camera devices...');
                 availableDevices = await codeReader.listVideoInputDevices();
-                console.log('Available cameras:', availableDevices);
+                console.log('📷 Available cameras:', availableDevices);
+                console.log('📷 Number of cameras found:', availableDevices.length);
                 
                 if (availableDevices.length > 0) {
+                    // 各カメラの詳細をログ出力
+                    availableDevices.forEach((device, index) => {
+                        console.log(`📷 Camera ${index}:`, {
+                            deviceId: device.deviceId,
+                            label: device.label,
+                            kind: device.kind
+                        });
+                    });
+                    
                     // バックカメラを優先的に選択
                     const backCamera = availableDevices.find(device => 
                         device.label.toLowerCase().includes('back') || 
                         device.label.toLowerCase().includes('rear')
                     );
-                    currentDeviceId = backCamera ? backCamera.deviceId : availableDevices[0].deviceId;
+                    
+                    const selectedCamera = backCamera || availableDevices[0];
+                    
+                    // deviceIdがundefinedの場合は空文字列または省略する
+                    if (selectedCamera.deviceId && selectedCamera.deviceId !== 'undefined') {
+                        currentDeviceId = selectedCamera.deviceId;
+                    } else {
+                        console.warn('⚠️ Device ID is undefined, using default camera');
+                        currentDeviceId = null; // nullの場合はデフォルトカメラを使用
+                    }
+                    
+                    console.log('✅ Selected camera ID:', currentDeviceId);
+                    console.log('✅ Selected camera:', selectedCamera);
                     
                     // カメラ切替ボタンの表示制御
                     if (availableDevices.length > 1) {
                         document.getElementById('switch-camera').style.display = 'inline-block';
+                        console.log('✅ Camera switch button enabled');
                     }
                 } else {
+                    console.error('❌ No cameras found');
                     showError('カメラが見つかりませんでした。');
                 }
             } catch (error) {
-                console.error('Scanner initialization error:', error);
+                console.error('❌ Scanner initialization error:', error);
+                console.error('❌ Error name:', error.name);
+                console.error('❌ Error message:', error.message);
+                console.error('❌ Error stack:', error.stack);
                 showError('カメラの初期化に失敗しました: ' + error.message);
             }
         }
 
         async function startScanning() {
-            if (!codeReader || !currentDeviceId) {
-                showError('カメラが利用できません。');
+            console.log('🚀 Starting camera scan...');
+            console.log('🔍 codeReader exists:', !!codeReader);
+            console.log('🔍 currentDeviceId:', currentDeviceId);
+            console.log('🔍 availableDevices:', availableDevices);
+            
+            if (!codeReader) {
+                console.error('❌ codeReader is not initialized');
+                showError('QRコードリーダーが初期化されていません。');
+                return;
+            }
+            
+            if (availableDevices.length === 0) {
+                console.error('❌ No camera devices available');
+                showError('利用可能なカメラがありません。');
                 return;
             }
 
             try {
+                console.log('📷 Requesting camera permission...');
+                console.log('📷 Using device ID:', currentDeviceId);
+                
+                // カメラパーミッションを明示的に要求
+                let constraints;
+                if (currentDeviceId) {
+                    constraints = { 
+                        video: { 
+                            deviceId: { exact: currentDeviceId }
+                        } 
+                    };
+                } else {
+                    // deviceIdがnullの場合はデフォルトカメラを使用
+                    constraints = { 
+                        video: { 
+                            facingMode: 'environment' // バックカメラを優先
+                        } 
+                    };
+                }
+                console.log('📷 Camera constraints:', constraints);
+                
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                console.log('✅ Camera stream obtained:', stream);
+                console.log('✅ Video tracks:', stream.getVideoTracks());
+                
                 isScanning = true;
                 document.getElementById('start-btn').style.display = 'none';
                 document.getElementById('stop-btn').style.display = 'inline-block';
                 
                 clearResults();
+                showSuccess('カメラを起動しています...');
                 
                 const video = document.getElementById('video');
+                video.srcObject = stream;
                 
-                // スキャン開始
-                const result = await codeReader.decodeOnceFromVideoDevice(currentDeviceId, 'video');
+                // ZXingでの継続スキャンを開始
+                console.log('🔍 Starting ZXing continuous scan...');
                 
-                if (result) {
-                    handleScanResult(result.text);
-                }
+                // 継続的なスキャンを実装
+                codeReader.decodeFromVideoDevice(currentDeviceId, 'video', (result, error) => {
+                    if (!isScanning) return;
+                    
+                    if (result) {
+                        console.log('✅ QR/Barcode found:', result.text);
+                        handleScanResult(result.text);
+                    }
+                    
+                    if (error && error.name !== 'NotFoundException') {
+                        console.warn('⚠️ Scan error:', error);
+                    }
+                });
                 
             } catch (error) {
-                console.error('Scanning error:', error);
-                if (error.name !== 'NotFoundException') {
-                    showError('スキャンエラー: ' + error.message);
+                console.error('Camera permission error:', error);
+                if (error.name === 'NotAllowedError') {
+                    showError('カメラのアクセス許可が必要です。ブラウザの設定でカメラを許可してください。');
+                } else if (error.name === 'NotFoundError') {
+                    showError('カメラが見つかりません。');
+                } else if (error.name === 'NotSupportedError') {
+                    showError('このブラウザではカメラがサポートされていません。');
+                } else {
+                    showError('カメラの起動に失敗しました: ' + error.message);
                 }
+                
+                isScanning = false;
+                document.getElementById('start-btn').style.display = 'inline-block';
+                document.getElementById('stop-btn').style.display = 'none';
             }
         }
 
@@ -161,9 +289,19 @@
             if (codeReader) {
                 codeReader.reset();
             }
+            
+            // ビデオストリームも停止
+            const video = document.getElementById('video');
+            if (video.srcObject) {
+                const tracks = video.srcObject.getTracks();
+                tracks.forEach(track => track.stop());
+                video.srcObject = null;
+            }
+            
             isScanning = false;
             document.getElementById('start-btn').style.display = 'inline-block';
             document.getElementById('stop-btn').style.display = 'none';
+            clearResults();
         }
 
         function switchCamera() {
@@ -228,18 +366,18 @@
         function processISBN(isbn) {
             stopScanning();
             
-            // 登録画面にリダイレクト
-            const registerUrl = `register.html?isbn=${isbn}`;
+            // 書籍管理画面にリダイレクト（ISBNパラメータ付き）
+            const booksUrl = `books.html?isbn=${isbn}`;
             
             showSuccess(`
                 <p>ISBN: ${isbn}</p>
-                <p>書籍登録画面に移動します...</p>
-                <button class="btn btn-primary" onclick="window.location.href='${registerUrl}'">今すぐ移動</button>
+                <p>書籍管理画面に移動します...</p>
+                <button class="btn btn-primary" onclick="window.location.href='${booksUrl}'">今すぐ移動</button>
             `);
             
             // 3秒後に自動リダイレクト
             setTimeout(() => {
-                window.location.href = registerUrl;
+                window.location.href = booksUrl;
             }, 3000);
         }
 

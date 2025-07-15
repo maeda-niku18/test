@@ -95,17 +95,21 @@
             
             document.getElementById('scanner-url').textContent = scannerUrl;
             
-            QRCode.toCanvas(document.createElement('canvas'), scannerUrl, {
+            // QRコードを画像として生成
+            QRCode.toDataURL(scannerUrl, {
                 width: 200,
                 margin: 2,
-            }, function (error, canvas) {
+                color: {
+                    dark: '#000000',
+                    light: '#FFFFFF'
+                }
+            }, function (error, url) {
                 if (error) {
                     console.error('QRコード生成エラー:', error);
                     return;
                 }
                 const qrContainer = document.getElementById('qrcode');
-                qrContainer.innerHTML = '';
-                qrContainer.appendChild(canvas);
+                qrContainer.innerHTML = `<img src="${url}" alt="QRコード" style="max-width: 200px; border: 1px solid #ddd; border-radius: 8px;">`;
             });
         }
 
