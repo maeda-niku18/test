@@ -422,6 +422,10 @@
         }
 
         function showBookInfo(isbn, bookInfo) {
+            // グローバル変数に保存
+            currentBookInfo = bookInfo;
+            console.log('📄 Book info stored globally:', currentBookInfo);
+            
             const resultArea = document.getElementById('result-area');
             resultArea.innerHTML = `
                 <div class="scan-result">
@@ -440,7 +444,7 @@
                     ${bookInfo.description ? `<p style="font-size: 0.8rem; color: #555; margin-bottom: 1rem;">${bookInfo.description.substring(0, 100)}...</p>` : ''}
                     
                     <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                        <button class="btn btn-primary" onclick="registerBook('${isbn}', ${JSON.stringify(bookInfo).replace(/'/g, '&#39;')})">
+                        <button class="btn btn-primary" onclick="handleRegisterBook('${isbn}')">
                             📚 この本を登録
                         </button>
                         <button class="btn" onclick="continueScanning()">
@@ -451,8 +455,23 @@
             `;
         }
 
+        // グローバル変数で現在の書籍情報を保持
+        let currentBookInfo = null;
+
+        window.handleRegisterBook = async function(isbn) {
+            if (!currentBookInfo) {
+                console.error('❌ No current book info available');
+                showError('書籍情報が見つかりません。もう一度スキャンしてください。');
+                return;
+            }
+            
+            console.log('📚 handleRegisterBook called with:', { isbn, currentBookInfo });
+            await registerBook(isbn, currentBookInfo);
+        }
+
         async function registerBook(isbn, bookInfo) {
             try {
+                console.log('📚 Starting book registration...', { isbn, bookInfo });
                 showSuccess('📚 書籍を登録しています...');
                 
                 const bookData = {
@@ -463,15 +482,17 @@
                     created_at: new Date().toISOString()
                 };
 
+                console.log('📚 Book data prepared:', bookData);
                 await registerToFirestore(bookData);
                 
                 showSuccess(`
                     <p>✅ 「${bookInfo.name}」が正常に登録されました！</p>
+                    <p>管理番号: ${bookData.manage_num || 'N/A'}</p>
                     <button class="btn btn-primary" onclick="continueScanning()">📱 次の本をスキャン</button>
                 `);
                 
             } catch (error) {
-                console.error('Registration error:', error);
+                console.error('❌ Registration error:', error);
                 showError(`登録に失敗しました: ${error.message}`);
                 setTimeout(() => {
                     showBookInfo(isbn, bookInfo);
@@ -480,30 +501,51 @@
         }
 
         async function registerToFirestore(bookData) {
-            // Firebase SDK のインポート
-            const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js');
-            const { getFirestore, collection, addDoc, query, where, getDocs } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+            try {
+                console.log('🔥 Starting Firestore registration...');
+                
+                // Firebase SDK のインポート
+                const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js');
+                const { getFirestore, collection, addDoc, query, where, getDocs } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
 
-            const firebaseConfig = {
-                apiKey: "AIzaSyBKhb3ctxhr-KT_4z32Iyfjo_tOc7LpImA",
-                authDomain: "auth-test-ba58c.firebaseapp.com",
-                projectId: "auth-test-ba58c",
-                storageBucket: "auth-test-ba58c.firebasestorage.app",
-                messagingSenderId: "856692946306",
-                appId: "1:856692946306:web:d8cbddf97686f542bd0b9b"
-            };
+                console.log('✅ Firebase SDK imported');
 
-            const app = initializeApp(firebaseConfig);
-            const db = getFirestore(app);
+                const firebaseConfig = {
+                    apiKey: "AIzaSyBKhb3ctxhr-KT_4z32Iyfjo_tOc7LpImA",
+                    authDomain: "auth-test-ba58c.firebaseapp.com",
+                    projectId: "auth-test-ba58c",
+                    storageBucket: "auth-test-ba58c.firebasestorage.app",
+                    messagingSenderId: "856692946306",
+                    appId: "1:856692946306:web:d8cbddf97686f542bd0b9b"
+                };
 
-            // 同じISBNの書籍を検索して次の管理番号を決定
-            const nextManageNum = await getNextManageNumber(db, bookData.code);
-            bookData.manage_num = nextManageNum;
-            
-            console.log(`Generated manage_num: ${nextManageNum} for ISBN: ${bookData.code}`);
+                const app = initializeApp(firebaseConfig);
+                const db = getFirestore(app);
+                
+                console.log('✅ Firebase initialized');
 
-            const docRef = await addDoc(collection(db, 'book'), bookData);
-            console.log('Document written with ID: ', docRef.id);
+                // 同じISBNの書籍を検索して次の管理番号を決定
+                console.log(`🔍 Getting next manage number for ISBN: ${bookData.code}`);
+                const nextManageNum = await getNextManageNumber(db, bookData.code);
+                bookData.manage_num = nextManageNum;
+                
+                console.log(`✅ Generated manage_num: ${nextManageNum} for ISBN: ${bookData.code}`);
+                console.log('📄 Final book data:', bookData);
+
+                const docRef = await addDoc(collection(db, 'book'), bookData);
+                console.log('✅ Document written with ID: ', docRef.id);
+                
+                return docRef.id;
+                
+            } catch (error) {
+                console.error('❌ Firestore registration failed:', error);
+                console.error('❌ Error details:', {
+                    name: error.name,
+                    message: error.message,
+                    stack: error.stack
+                });
+                throw error;
+            }
         }
 
         async function getNextManageNumber(db, isbn) {
