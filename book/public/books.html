@@ -118,7 +118,7 @@
 
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-        import { getFirestore, collection, getDocs, doc, getDoc, updateDoc, deleteDoc, addDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        import { getFirestore, collection, getDocs, doc, getDoc, updateDoc, deleteDoc, addDoc, query, where } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
         const firebaseConfig = {
             apiKey: "AIzaSyBKhb3ctxhr-KT_4z32Iyfjo_tOc7LpImA",
@@ -677,13 +677,19 @@
 
         async function registerBookToFirestore(bookData) {
             try {
+                // 同じISBNの書籍を検索して次の管理番号を決定
+                const nextManageNum = await getNextManageNumber(db, bookData.code);
+                
                 const finalBookData = {
                     ...bookData,
+                    manage_num: nextManageNum,
                     user_id: null,
                     location: '',
                     remarks: '',
                     created_at: new Date().toISOString()
                 };
+
+                console.log(`Generated manage_num: ${nextManageNum} for ISBN: ${bookData.code}`);
 
                 const docRef = await addDoc(collection(db, 'book'), finalBookData);
                 console.log('Document written with ID: ', docRef.id);
@@ -692,6 +698,55 @@
             } catch (error) {
                 console.error('Firestore registration error:', error);
                 throw error;
+            }
+        }
+
+        async function getNextManageNumber(db, isbn) {
+            try {
+                // 同じISBNの書籍を検索
+                const booksRef = collection(db, 'book');
+                const q = query(booksRef, where('code', '==', isbn));
+                const querySnapshot = await getDocs(q);
+                
+                console.log(`Found ${querySnapshot.size} existing books with ISBN: ${isbn}`);
+                
+                if (querySnapshot.empty) {
+                    // 初回登録の場合
+                    return `${isbn}_001`;
+                }
+                
+                // 既存の管理番号から最大の通し番号を取得
+                let maxNumber = 0;
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    const manageNum = data.manage_num;
+                    
+                    if (manageNum && typeof manageNum === 'string') {
+                        // 管理番号の形式: ISBN_XXX
+                        const parts = manageNum.split('_');
+                        if (parts.length >= 2) {
+                            const numberPart = parts[parts.length - 1]; // 最後の部分を取得
+                            const num = parseInt(numberPart);
+                            if (!isNaN(num) && num > maxNumber) {
+                                maxNumber = num;
+                            }
+                        }
+                    }
+                });
+                
+                console.log(`Max existing number for ISBN ${isbn}: ${maxNumber}`);
+                
+                // 次の番号を生成（3桁ゼロパディング）
+                const nextNumber = maxNumber + 1;
+                const paddedNumber = String(nextNumber).padStart(3, '0');
+                
+                return `${isbn}_${paddedNumber}`;
+                
+            } catch (error) {
+                console.error('Error getting next manage number:', error);
+                // エラーの場合はタイムスタンプを使用してユニークにする
+                const timestamp = Date.now().toString().slice(-6);
+                return `${isbn}_${timestamp}`;
             }
         }
 

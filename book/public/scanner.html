@@ -363,22 +363,201 @@
             }
         }
 
-        function processISBN(isbn) {
+        async function processISBN(isbn) {
             stopScanning();
             
-            // 書籍管理画面にリダイレクト（ISBNパラメータ付き）
-            const booksUrl = `books.html?isbn=${isbn}`;
+            try {
+                // Google Books APIで書籍情報を取得
+                const bookInfo = await fetchBookFromGoogleAPI(isbn);
+                
+                showBookInfo(isbn, bookInfo);
+                
+            } catch (error) {
+                console.error('Book info fetch error:', error);
+                showError(`書籍情報の取得に失敗しました: ${error.message}`);
+                // エラーの場合は3秒後にスキャンを再開
+                setTimeout(() => {
+                    clearResults();
+                    startScanning();
+                }, 3000);
+            }
+        }
+
+        async function fetchBookFromGoogleAPI(isbn) {
+            // 10桁ISBNを13桁に変換
+            let isbn13 = isbn;
+            if (isbn.length === 10) {
+                isbn13 = convertISBN10to13(isbn);
+                console.log(`Converted ISBN ${isbn} to ${isbn13}`);
+            }
             
-            showSuccess(`
-                <p>ISBN: ${isbn}</p>
-                <p>書籍管理画面に移動します...</p>
-                <button class="btn btn-primary" onclick="window.location.href='${booksUrl}'">今すぐ移動</button>
-            `);
+            const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn13}`);
+            const data = await response.json();
             
-            // 3秒後に自動リダイレクト
-            setTimeout(() => {
-                window.location.href = booksUrl;
-            }, 3000);
+            if (!data.items || data.items.length === 0) {
+                throw new Error('書籍が見つかりませんでした');
+            }
+
+            const book = data.items[0];
+            const volumeInfo = book.volumeInfo;
+            
+            return {
+                code: isbn13,
+                name: volumeInfo.title || '不明',
+                description: volumeInfo.description || '',
+                thumbnail_url: volumeInfo.imageLinks?.thumbnail || '',
+                published_date: volumeInfo.publishedDate || '',
+                manage_num: `${isbn13}_001`
+            };
+        }
+
+        function convertISBN10to13(isbn10) {
+            const prefix = '978' + isbn10.substring(0, 9);
+            let sum = 0;
+            for (let i = 0; i < 12; i++) {
+                sum += parseInt(prefix[i]) * (i % 2 === 0 ? 1 : 3);
+            }
+            const checkDigit = (10 - (sum % 10)) % 10;
+            return prefix + checkDigit;
+        }
+
+        function showBookInfo(isbn, bookInfo) {
+            const resultArea = document.getElementById('result-area');
+            resultArea.innerHTML = `
+                <div class="scan-result">
+                    <h3>📖 書籍情報</h3>
+                    <div style="display: flex; gap: 1rem; margin-bottom: 1rem; align-items: flex-start;">
+                        ${bookInfo.thumbnail_url ? 
+                            `<img src="${bookInfo.thumbnail_url}" alt="${bookInfo.name}" style="width: 80px; height: auto; border-radius: 4px;">` : 
+                            '<div style="width: 80px; height: 100px; background: #f0f0f0; display: flex; align-items: center; justify-content: center; border-radius: 4px; font-size: 0.8rem;">画像なし</div>'
+                        }
+                        <div style="flex: 1;">
+                            <p><strong>${bookInfo.name}</strong></p>
+                            <p style="font-size: 0.9rem; color: #666;">ISBN: ${isbn}</p>
+                            <p style="font-size: 0.9rem; color: #666;">出版日: ${bookInfo.published_date || '不明'}</p>
+                        </div>
+                    </div>
+                    ${bookInfo.description ? `<p style="font-size: 0.8rem; color: #555; margin-bottom: 1rem;">${bookInfo.description.substring(0, 100)}...</p>` : ''}
+                    
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                        <button class="btn btn-primary" onclick="registerBook('${isbn}', ${JSON.stringify(bookInfo).replace(/'/g, '&#39;')})">
+                            📚 この本を登録
+                        </button>
+                        <button class="btn" onclick="continueScanning()">
+                            📱 次の本をスキャン
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function registerBook(isbn, bookInfo) {
+            try {
+                showSuccess('📚 書籍を登録しています...');
+                
+                const bookData = {
+                    ...bookInfo,
+                    user_id: null,
+                    location: '',
+                    remarks: '',
+                    created_at: new Date().toISOString()
+                };
+
+                await registerToFirestore(bookData);
+                
+                showSuccess(`
+                    <p>✅ 「${bookInfo.name}」が正常に登録されました！</p>
+                    <button class="btn btn-primary" onclick="continueScanning()">📱 次の本をスキャン</button>
+                `);
+                
+            } catch (error) {
+                console.error('Registration error:', error);
+                showError(`登録に失敗しました: ${error.message}`);
+                setTimeout(() => {
+                    showBookInfo(isbn, bookInfo);
+                }, 3000);
+            }
+        }
+
+        async function registerToFirestore(bookData) {
+            // Firebase SDK のインポート
+            const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js');
+            const { getFirestore, collection, addDoc, query, where, getDocs } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+
+            const firebaseConfig = {
+                apiKey: "AIzaSyBKhb3ctxhr-KT_4z32Iyfjo_tOc7LpImA",
+                authDomain: "auth-test-ba58c.firebaseapp.com",
+                projectId: "auth-test-ba58c",
+                storageBucket: "auth-test-ba58c.firebasestorage.app",
+                messagingSenderId: "856692946306",
+                appId: "1:856692946306:web:d8cbddf97686f542bd0b9b"
+            };
+
+            const app = initializeApp(firebaseConfig);
+            const db = getFirestore(app);
+
+            // 同じISBNの書籍を検索して次の管理番号を決定
+            const nextManageNum = await getNextManageNumber(db, bookData.code);
+            bookData.manage_num = nextManageNum;
+            
+            console.log(`Generated manage_num: ${nextManageNum} for ISBN: ${bookData.code}`);
+
+            const docRef = await addDoc(collection(db, 'book'), bookData);
+            console.log('Document written with ID: ', docRef.id);
+        }
+
+        async function getNextManageNumber(db, isbn) {
+            try {
+                // 同じISBNの書籍を検索
+                const booksRef = collection(db, 'book');
+                const q = query(booksRef, where('code', '==', isbn));
+                const querySnapshot = await getDocs(q);
+                
+                console.log(`Found ${querySnapshot.size} existing books with ISBN: ${isbn}`);
+                
+                if (querySnapshot.empty) {
+                    // 初回登録の場合
+                    return `${isbn}_001`;
+                }
+                
+                // 既存の管理番号から最大の通し番号を取得
+                let maxNumber = 0;
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    const manageNum = data.manage_num;
+                    
+                    if (manageNum && typeof manageNum === 'string') {
+                        // 管理番号の形式: ISBN_XXX
+                        const parts = manageNum.split('_');
+                        if (parts.length >= 2) {
+                            const numberPart = parts[parts.length - 1]; // 最後の部分を取得
+                            const num = parseInt(numberPart);
+                            if (!isNaN(num) && num > maxNumber) {
+                                maxNumber = num;
+                            }
+                        }
+                    }
+                });
+                
+                console.log(`Max existing number for ISBN ${isbn}: ${maxNumber}`);
+                
+                // 次の番号を生成（3桁ゼロパディング）
+                const nextNumber = maxNumber + 1;
+                const paddedNumber = String(nextNumber).padStart(3, '0');
+                
+                return `${isbn}_${paddedNumber}`;
+                
+            } catch (error) {
+                console.error('Error getting next manage number:', error);
+                // エラーの場合はタイムスタンプを使用してユニークにする
+                const timestamp = Date.now().toString().slice(-6);
+                return `${isbn}_${timestamp}`;
+            }
+        }
+
+        function continueScanning() {
+            clearResults();
+            startScanning();
         }
 
         function showSuccess(message) {
