@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>図書管理システム - ログイン</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-form">
+            <h1>📚 図書管理システム</h1>
+            <div id="error-message" class="error-message" style="display: none;"></div>
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="facility-id">施設ID</label>
+                    <input type="text" id="facility-id" name="facilityId" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">パスワード</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                <button type="submit" class="btn btn-primary">ログイン</button>
+            </form>
+            <div style="margin-top: 1rem; text-align: center; font-size: 0.9rem; color: #666;">
+                テスト用ID: aaa<br>
+                パスワード: bbb
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getFirestore, collection, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBKhb3ctxhr-KT_4z32Iyfjo_tOc7LpImA",
+            authDomain: "auth-test-ba58c.firebaseapp.com",
+            projectId: "auth-test-ba58c",
+            storageBucket: "auth-test-ba58c.firebasestorage.app",
+            messagingSenderId: "856692946306",
+            appId: "1:856692946306:web:d8cbddf97686f542bd0b9b"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const loginForm = document.getElementById('login-form');
+            const errorMessage = document.getElementById('error-message');
+
+            loginForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const facilityId = document.getElementById('facility-id').value;
+                const password = document.getElementById('password').value;
+
+                try {
+                    await authenticateFacility(facilityId, password);
+                    sessionStorage.setItem('facilityId', facilityId);
+                    window.location.href = 'home.html';
+                } catch (error) {
+                    showError('ログインに失敗しました。施設IDとパスワードを確認してください。');
+                }
+            });
+
+            async function authenticateFacility(facilityId, password) {
+                // 簡単な認証（固定値）
+                if (facilityId === 'aaa' && password === 'bbb') {
+                    return true;
+                } else {
+                    throw new Error('Invalid credentials');
+                }
+            }
+
+            function showError(message) {
+                errorMessage.textContent = message;
+                errorMessage.style.display = 'block';
+                setTimeout(() => {
+                    errorMessage.style.display = 'none';
+                }, 5000);
+            }
+        });
+    </script>
+</body>
+</html>

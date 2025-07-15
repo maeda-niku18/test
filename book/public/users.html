@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>図書管理システム - ユーザー管理</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="sidebar">
+        <h2>📚 図書管理</h2>
+        <a href="home.html">ホーム</a>
+        <a href="books.html">書籍管理</a>
+        <a href="users.html">ユーザー管理</a>
+        <a href="register.html">書籍登録</a>
+        <a href="#" onclick="logout()">ログアウト</a>
+    </div>
+
+    <div class="main-content">
+        <h1>ユーザー管理</h1>
+        
+        <div class="card">
+            <input type="text" id="search-input" class="search-box" placeholder="ユーザー名で検索...">
+            <div style="margin-top: 1rem;">
+                <label>
+                    <input type="radio" name="class-filter" value="all" checked> すべて
+                </label>
+                <label style="margin-left: 1rem;">
+                    <input type="radio" name="class-filter" value="年少組"> 年少組
+                </label>
+                <label style="margin-left: 1rem;">
+                    <input type="radio" name="class-filter" value="年中組"> 年中組
+                </label>
+                <label style="margin-left: 1rem;">
+                    <input type="radio" name="class-filter" value="年長組"> 年長組
+                </label>
+            </div>
+            <div style="margin-top: 1rem;">
+                <select id="sort-select">
+                    <option value="name">名前順</option>
+                    <option value="class">クラス順</option>
+                    <option value="created">登録日順</option>
+                </select>
+            </div>
+        </div>
+
+        <div id="users-container" class="user-list">
+            <!-- ユーザーリストがここに表示されます -->
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getFirestore, collection, getDocs } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBKhb3ctxhr-KT_4z32Iyfjo_tOc7LpImA",
+            authDomain: "auth-test-ba58c.firebaseapp.com",
+            projectId: "auth-test-ba58c",
+            storageBucket: "auth-test-ba58c.firebasestorage.app",
+            messagingSenderId: "856692946306",
+            appId: "1:856692946306:web:d8cbddf97686f542bd0b9b"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        let allUsers = [];
+        let currentClassFilter = 'all';
+        let currentSortOption = 'name';
+
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuth();
+            setupEventListeners();
+            loadUsers();
+        });
+
+        function checkAuth() {
+            const facilityId = sessionStorage.getItem('facilityId');
+            if (!facilityId) {
+                window.location.href = 'index.html';
+                return;
+            }
+        }
+
+        function setupEventListeners() {
+            const searchInput = document.getElementById('search-input');
+            const classFilters = document.querySelectorAll('input[name="class-filter"]');
+            const sortSelect = document.getElementById('sort-select');
+
+            searchInput.addEventListener('input', filterAndSortUsers);
+            
+            classFilters.forEach(filter => {
+                filter.addEventListener('change', (e) => {
+                    currentClassFilter = e.target.value;
+                    filterAndSortUsers();
+                });
+            });
+
+            sortSelect.addEventListener('change', (e) => {
+                currentSortOption = e.target.value;
+                filterAndSortUsers();
+            });
+        }
+
+        async function loadUsers() {
+            try {
+                const usersRef = collection(db, 'users');
+                const querySnapshot = await getDocs(usersRef);
+                
+                allUsers = [];
+                querySnapshot.forEach((doc) => {
+                    allUsers.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+
+                filterAndSortUsers();
+            } catch (error) {
+                console.error('ユーザーの読み込みに失敗しました:', error);
+                document.getElementById('users-container').innerHTML = 
+                    '<div class="card"><p>ユーザーの読み込みに失敗しました。</p></div>';
+            }
+        }
+
+        function filterAndSortUsers() {
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+            
+            let filteredUsers = allUsers.filter(user => {
+                const matchesSearch = user.name.toLowerCase().includes(searchTerm);
+                const matchesClass = currentClassFilter === 'all' || user.class === currentClassFilter;
+                return matchesSearch && matchesClass;
+            });
+
+            // ソート
+            filteredUsers.sort((a, b) => {
+                switch (currentSortOption) {
+                    case 'name':
+                        return a.name.localeCompare(b.name, 'ja');
+                    case 'class':
+                        return a.class.localeCompare(b.class, 'ja');
+                    case 'created':
+                        return new Date(b.createdAt) - new Date(a.createdAt);
+                    default:
+                        return 0;
+                }
+            });
+
+            displayUsers(filteredUsers);
+        }
+
+        function displayUsers(users) {
+            const container = document.getElementById('users-container');
+            
+            if (users.length === 0) {
+                container.innerHTML = '<div class="card"><p>該当するユーザーが見つかりませんでした。</p></div>';
+                return;
+            }
+
+            const usersHtml = users.map(user => `
+                <div class="card user-card">
+                    <div>
+                        <div class="user-name">${user.name}</div>
+                        <div class="user-class">${user.class}</div>
+                        <div class="book-info">ユーザータイプ: ${getUserTypeText(user.userType)}</div>
+                        <div class="book-info">登録日: ${formatDate(user.createdAt)}</div>
+                    </div>
+                    <div>
+                        <span class="status-label available">
+                            ${getClassIcon(user.class)}
+                        </span>
+                    </div>
+                </div>
+            `).join('');
+
+            container.innerHTML = usersHtml;
+        }
+
+        function getUserTypeText(userType) {
+            switch (userType) {
+                case 'child': return '園児';
+                case 'teacher': return '先生';
+                case 'staff': return 'スタッフ';
+                default: return '不明';
+            }
+        }
+
+        function getClassIcon(className) {
+            switch (className) {
+                case '年少組': return '🌱';
+                case '年中組': return '🌿';
+                case '年長組': return '🌳';
+                default: return '👤';
+            }
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return '不明';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('ja-JP');
+        }
+
+        window.logout = function() {
+            sessionStorage.removeItem('facilityId');
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>

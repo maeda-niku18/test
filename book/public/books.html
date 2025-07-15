@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>図書管理システム - 書籍管理</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="sidebar">
+        <h2>📚 図書管理</h2>
+        <a href="home.html">ホーム</a>
+        <a href="books.html">書籍管理</a>
+        <a href="users.html">ユーザー管理</a>
+        <a href="register.html">書籍登録</a>
+        <a href="#" onclick="logout()">ログアウト</a>
+    </div>
+
+    <div class="main-content">
+        <h1>書籍管理</h1>
+        
+        <div class="card">
+            <input type="text" id="search-input" class="search-box" placeholder="書籍名で検索...">
+            <div style="margin-top: 1rem;">
+                <label>
+                    <input type="checkbox" id="filter-available" checked> 貸出可能
+                </label>
+                <label style="margin-left: 1rem;">
+                    <input type="checkbox" id="filter-borrowed" checked> 貸出中
+                </label>
+            </div>
+        </div>
+
+        <div id="books-container" class="book-list">
+            <!-- 書籍リストがここに表示されます -->
+        </div>
+    </div>
+
+    <!-- 書籍詳細モーダル -->
+    <div id="book-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div id="book-details">
+                <!-- 書籍詳細がここに表示されます -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 書籍編集モーダル -->
+    <div id="edit-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-edit">&times;</span>
+            <h2>📝 書籍情報編集</h2>
+            <div id="edit-form">
+                <div class="form-group">
+                    <label for="edit-name">書籍名</label>
+                    <input type="text" id="edit-name" readonly style="background: #f5f5f5;">
+                </div>
+                <div class="form-group">
+                    <label for="edit-code">ISBNコード</label>
+                    <input type="text" id="edit-code" readonly style="background: #f5f5f5;">
+                </div>
+                <div class="form-group">
+                    <label for="edit-manage-num">管理番号 *</label>
+                    <input type="text" id="edit-manage-num" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-location">配置場所</label>
+                    <input type="text" id="edit-location" placeholder="例：絵本コーナー A-1">
+                </div>
+                <div class="form-group">
+                    <label for="edit-remarks">備考</label>
+                    <textarea id="edit-remarks" rows="3" placeholder="書籍に関する備考"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="edit-user-status">貸出状況</label>
+                    <select id="edit-user-status">
+                        <option value="">貸出可能</option>
+                        <option value="manual">手動で貸出中に設定</option>
+                    </select>
+                </div>
+                <div class="form-group" id="user-id-group" style="display: none;">
+                    <label for="edit-user-id">貸出ユーザーID</label>
+                    <input type="text" id="edit-user-id" placeholder="ユーザーIDを入力">
+                </div>
+                <div style="margin-top: 2rem;">
+                    <button class="btn btn-primary" onclick="saveBookChanges()">保存</button>
+                    <button class="btn" onclick="closeEditModal()" style="margin-left: 1rem;">キャンセル</button>
+                    <button class="btn" onclick="deleteBook()" style="margin-left: 1rem; background-color: #e3342f;">削除</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getFirestore, collection, getDocs, doc, getDoc, updateDoc, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBKhb3ctxhr-KT_4z32Iyfjo_tOc7LpImA",
+            authDomain: "auth-test-ba58c.firebaseapp.com",
+            projectId: "auth-test-ba58c",
+            storageBucket: "auth-test-ba58c.firebasestorage.app",
+            messagingSenderId: "856692946306",
+            appId: "1:856692946306:web:d8cbddf97686f542bd0b9b"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        let allBooks = [];
+        let currentFilters = {
+            available: true,
+            borrowed: true
+        };
+        let currentEditingBook = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuth();
+            setupEventListeners();
+            loadBooks();
+        });
+
+        function checkAuth() {
+            const facilityId = sessionStorage.getItem('facilityId');
+            if (!facilityId) {
+                window.location.href = 'index.html';
+                return;
+            }
+        }
+
+        function setupEventListeners() {
+            const searchInput = document.getElementById('search-input');
+            const filterAvailable = document.getElementById('filter-available');
+            const filterBorrowed = document.getElementById('filter-borrowed');
+            const modal = document.getElementById('book-modal');
+            const editModal = document.getElementById('edit-modal');
+            const closeBtn = document.querySelector('.close');
+            const closeEditBtn = document.querySelector('.close-edit');
+            const userStatusSelect = document.getElementById('edit-user-status');
+
+            searchInput.addEventListener('input', filterBooks);
+            filterAvailable.addEventListener('change', updateFilters);
+            filterBorrowed.addEventListener('change', updateFilters);
+
+            closeBtn.addEventListener('click', () => {
+                modal.style.display = 'none';
+            });
+
+            closeEditBtn.addEventListener('click', () => {
+                closeEditModal();
+            });
+
+            userStatusSelect.addEventListener('change', (e) => {
+                const userIdGroup = document.getElementById('user-id-group');
+                if (e.target.value === 'manual') {
+                    userIdGroup.style.display = 'block';
+                } else {
+                    userIdGroup.style.display = 'none';
+                    document.getElementById('edit-user-id').value = '';
+                }
+            });
+
+            window.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.style.display = 'none';
+                }
+                if (e.target === editModal) {
+                    closeEditModal();
+                }
+            });
+        }
+
+        async function loadBooks() {
+            try {
+                console.log('Loading books from Firestore...');
+                const booksRef = collection(db, 'book'); // コレクション名を'book'に変更
+                const querySnapshot = await getDocs(booksRef);
+                
+                console.log('Query snapshot size:', querySnapshot.size);
+                
+                allBooks = [];
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    console.log('Book data:', data);
+                    
+                    // Swift版と同様の構造でデータを処理
+                    const bookData = {
+                        id: doc.id,
+                        userId: data.user_id,
+                        name: data.name,
+                        code: typeof data.code === 'number' ? String(data.code) : data.code,
+                        manage_num: data.manage_num,
+                        thumbnail_url: data.thumbnail_url,
+                        published_date: data.published_date,
+                        description: data.description
+                    };
+                    
+                    allBooks.push(bookData);
+                });
+
+                console.log('All books loaded:', allBooks);
+                displayBooks(allBooks);
+            } catch (error) {
+                console.error('書籍の読み込みに失敗しました:', error);
+                document.getElementById('books-container').innerHTML = 
+                    '<div class="card"><p>書籍の読み込みに失敗しました。エラー: ' + error.message + '</p></div>';
+            }
+        }
+
+        function updateFilters() {
+            currentFilters.available = document.getElementById('filter-available').checked;
+            currentFilters.borrowed = document.getElementById('filter-borrowed').checked;
+            filterBooks();
+        }
+
+        function filterBooks() {
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+            
+            const filteredBooks = allBooks.filter(book => {
+                const matchesSearch = book.name.toLowerCase().includes(searchTerm);
+                const status = book.userId ? 'borrowed' : 'available';
+                const matchesFilter = currentFilters[status] || false;
+                return matchesSearch && matchesFilter;
+            });
+
+            displayBooks(filteredBooks);
+        }
+
+        function displayBooks(books) {
+            const container = document.getElementById('books-container');
+            
+            if (books.length === 0) {
+                container.innerHTML = '<div class="card"><p>該当する書籍が見つかりませんでした。</p></div>';
+                return;
+            }
+
+            const booksHtml = books.map(book => `
+                <div class="card book-card" onclick="showBookDetails('${book.id}')">
+                    <div style="display: flex; gap: 1rem;">
+                        ${book.thumbnail_url ? `<img src="${book.thumbnail_url}" alt="${book.name}" class="book-thumbnail">` : ''}
+                        <div style="flex: 1;">
+                            <div class="book-title">${book.name}</div>
+                            <div class="book-info">ISBN: ${book.code || '不明'}</div>
+                            <div class="book-info">管理番号: ${book.manage_num || '不明'}</div>
+                            <div style="margin-top: 0.5rem;">
+                                <span class="status-label ${getStatusClass(book.userId)}">
+                                    ${getStatusText(book.userId)}
+                                </span>
+                            </div>
+                            ${book.description ? `<div class="book-info" style="margin-top: 0.5rem; font-size: 0.8rem; color: #666;">${book.description.substring(0, 100)}...</div>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            container.innerHTML = booksHtml;
+        }
+
+        function getStatusText(userId) {
+            return userId ? '貸出中' : '貸出可能';
+        }
+
+        function getStatusClass(userId) {
+            return userId ? 'borrowed' : 'available';
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return '不明';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('ja-JP');
+        }
+
+        window.showBookDetails = async function(bookId) {
+            console.log('showBookDetails called with ID:', bookId);
+            const modal = document.getElementById('book-modal');
+            const detailsContainer = document.getElementById('book-details');
+            
+            try {
+                console.log('Fetching book details for ID:', bookId);
+                const bookDoc = await getDoc(doc(db, 'book', bookId)); // コレクション名を'book'に修正
+                console.log('Book document exists:', bookDoc.exists());
+                
+                if (!bookDoc.exists()) {
+                    console.log('Book not found with ID:', bookId);
+                    detailsContainer.innerHTML = '<p>書籍が見つかりませんでした。書籍ID: ' + bookId + '</p>';
+                    modal.style.display = 'block';
+                    return;
+                }
+
+                const bookData = bookDoc.data();
+                console.log('Raw book data:', bookData);
+                
+                // Swift版と同様の構造でデータを処理
+                const book = {
+                    id: bookDoc.id,
+                    userId: bookData.user_id,
+                    name: bookData.name,
+                    code: typeof bookData.code === 'number' ? String(bookData.code) : bookData.code,
+                    manage_num: bookData.manage_num,
+                    thumbnail_url: bookData.thumbnail_url,
+                    published_date: bookData.published_date,
+                    description: bookData.description
+                };
+                
+                console.log('Processed book data:', book);
+                
+                const detailsHtml = `
+                    <div style="display: flex; gap: 2rem; margin-bottom: 2rem;">
+                        ${book.thumbnail_url ? `<img src="${book.thumbnail_url}" alt="${book.name}" class="book-thumbnail-detail">` : ''}
+                        <div style="flex: 1;">
+                            <h2>${book.name}</h2>
+                            <div class="book-info"><strong>ISBN:</strong> ${book.code || '不明'}</div>
+                            <div class="book-info"><strong>管理番号:</strong> ${book.manage_num || '不明'}</div>
+                            <div class="book-info"><strong>出版日:</strong> ${book.published_date || '不明'}</div>
+                            <div class="book-info" style="margin-top: 1rem;">
+                                <strong>ステータス:</strong> 
+                                <span class="status-label ${getStatusClass(book.userId)}">
+                                    ${getStatusText(book.userId)}
+                                </span>
+                            </div>
+                            ${book.userId ? `<div class="book-info" style="margin-top: 0.5rem;"><strong>貸出ユーザーID:</strong> ${book.userId}</div>` : ''}
+                        </div>
+                    </div>
+                    ${book.description ? `<div class="book-info" style="margin-top: 1rem;"><strong>説明:</strong><br>${book.description}</div>` : ''}
+                    
+                    <div style="margin-top: 2rem; text-align: center;">
+                        <button class="btn btn-primary" onclick="editBook('${book.id}')">📝 編集</button>
+                    </div>
+                    
+                    <h3 style="margin-top: 2rem;">貸出履歴</h3>
+                    <div id="lending-history">
+                        <p>貸出履歴機能は今後実装予定です。</p>
+                    </div>
+                `;
+
+                detailsContainer.innerHTML = detailsHtml;
+                modal.style.display = 'block';
+            } catch (error) {
+                console.error('書籍詳細の読み込みに失敗しました:', error);
+                detailsContainer.innerHTML = '<p>書籍詳細の読み込みに失敗しました。エラー: ' + error.message + '</p>';
+                modal.style.display = 'block';
+            }
+        }
+
+        window.editBook = async function(bookId) {
+            console.log('Edit book called with ID:', bookId);
+            
+            try {
+                const bookDoc = await getDoc(doc(db, 'book', bookId));
+                if (!bookDoc.exists()) {
+                    alert('書籍が見つかりませんでした。');
+                    return;
+                }
+
+                const bookData = bookDoc.data();
+                currentEditingBook = { id: bookId, ...bookData };
+                
+                // フォームに現在のデータを設定
+                document.getElementById('edit-name').value = bookData.name || '';
+                document.getElementById('edit-code').value = bookData.code || '';
+                document.getElementById('edit-manage-num').value = bookData.manage_num || '';
+                document.getElementById('edit-location').value = bookData.location || '';
+                document.getElementById('edit-remarks').value = bookData.remarks || '';
+                
+                // 貸出状況の設定
+                const userStatusSelect = document.getElementById('edit-user-status');
+                const userIdGroup = document.getElementById('user-id-group');
+                const userIdInput = document.getElementById('edit-user-id');
+                
+                if (bookData.user_id) {
+                    userStatusSelect.value = 'manual';
+                    userIdGroup.style.display = 'block';
+                    userIdInput.value = bookData.user_id;
+                } else {
+                    userStatusSelect.value = '';
+                    userIdGroup.style.display = 'none';
+                    userIdInput.value = '';
+                }
+                
+                // 詳細モーダルを閉じて編集モーダルを開く
+                document.getElementById('book-modal').style.display = 'none';
+                document.getElementById('edit-modal').style.display = 'block';
+                
+            } catch (error) {
+                console.error('Edit book error:', error);
+                alert('書籍情報の取得に失敗しました: ' + error.message);
+            }
+        }
+
+        window.saveBookChanges = async function() {
+            if (!currentEditingBook) {
+                alert('編集対象の書籍が選択されていません。');
+                return;
+            }
+
+            const manageNum = document.getElementById('edit-manage-num').value.trim();
+            if (!manageNum) {
+                alert('管理番号は必須です。');
+                return;
+            }
+
+            try {
+                const updates = {
+                    manage_num: manageNum,
+                    location: document.getElementById('edit-location').value.trim(),
+                    remarks: document.getElementById('edit-remarks').value.trim(),
+                    updated_at: new Date().toISOString()
+                };
+
+                // 貸出状況の更新
+                const userStatus = document.getElementById('edit-user-status').value;
+                if (userStatus === 'manual') {
+                    const userId = document.getElementById('edit-user-id').value.trim();
+                    updates.user_id = userId || null;
+                } else {
+                    updates.user_id = null;
+                }
+
+                await updateDoc(doc(db, 'book', currentEditingBook.id), updates);
+                
+                alert('書籍情報が更新されました！');
+                closeEditModal();
+                loadBooks(); // リストを再読み込み
+                
+            } catch (error) {
+                console.error('Save changes error:', error);
+                alert('書籍情報の更新に失敗しました: ' + error.message);
+            }
+        }
+
+        window.deleteBook = async function() {
+            if (!currentEditingBook) {
+                alert('削除対象の書籍が選択されていません。');
+                return;
+            }
+
+            const bookName = currentEditingBook.name || '不明';
+            if (!confirm(`「${bookName}」を削除してもよろしいですか？\n\nこの操作は取り消せません。`)) {
+                return;
+            }
+
+            try {
+                await deleteDoc(doc(db, 'book', currentEditingBook.id));
+                
+                alert('書籍が削除されました。');
+                closeEditModal();
+                loadBooks(); // リストを再読み込み
+                
+            } catch (error) {
+                console.error('Delete book error:', error);
+                alert('書籍の削除に失敗しました: ' + error.message);
+            }
+        }
+
+        function closeEditModal() {
+            document.getElementById('edit-modal').style.display = 'none';
+            currentEditingBook = null;
+            
+            // フォームをリセット
+            document.getElementById('edit-name').value = '';
+            document.getElementById('edit-code').value = '';
+            document.getElementById('edit-manage-num').value = '';
+            document.getElementById('edit-location').value = '';
+            document.getElementById('edit-remarks').value = '';
+            document.getElementById('edit-user-status').value = '';
+            document.getElementById('edit-user-id').value = '';
+            document.getElementById('user-id-group').style.display = 'none';
+        }
+
+        window.logout = function() {
+            sessionStorage.removeItem('facilityId');
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>

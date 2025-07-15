@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ISBN スキャナー</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://unpkg.com/@zxing/library@latest/umd/index.min.js"></script>
+    <style>
+        .scanner-container {
+            max-width: 100%;
+            padding: 1rem;
+            text-align: center;
+        }
+        
+        #video {
+            width: 100%;
+            max-width: 400px;
+            height: auto;
+            border-radius: 8px;
+            border: 2px solid #f88c2b;
+        }
+        
+        .scan-result {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: #e8f5e8;
+            border-radius: 8px;
+            border: 1px solid #4caf50;
+        }
+        
+        .scan-error {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: #ffe6e6;
+            border-radius: 8px;
+            border: 1px solid #f44336;
+        }
+
+        .control-buttons {
+            margin: 1rem 0;
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        @media (max-width: 768px) {
+            .scanner-container {
+                padding: 0.5rem;
+            }
+            
+            .control-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .btn {
+                width: 100%;
+                max-width: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="scanner-container">
+        <h1>📱 ISBN スキャナー</h1>
+        <p>書籍のバーコード（ISBN）をカメラで読み取ってください</p>
+        
+        <div class="card">
+            <video id="video" playsinline></video>
+            
+            <div class="control-buttons">
+                <button id="start-btn" class="btn btn-primary" onclick="startScanning()">スキャン開始</button>
+                <button id="stop-btn" class="btn" onclick="stopScanning()" style="display: none;">スキャン停止</button>
+                <button class="btn" onclick="switchCamera()" id="switch-camera" style="display: none;">カメラ切替</button>
+            </div>
+            
+            <div id="result-area"></div>
+            
+            <div style="margin-top: 2rem;">
+                <h3>手動入力</h3>
+                <div class="form-group">
+                    <input type="text" id="manual-isbn" placeholder="ISBNコードを入力 (13桁)" maxlength="13">
+                    <button class="btn" onclick="processManualISBN()">確認</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let codeReader = null;
+        let currentDeviceId = null;
+        let isScanning = false;
+        let availableDevices = [];
+
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeScanner();
+        });
+
+        async function initializeScanner() {
+            try {
+                codeReader = new ZXing.BrowserMultiFormatReader();
+                
+                // カメラデバイスを取得
+                availableDevices = await codeReader.listVideoInputDevices();
+                console.log('Available cameras:', availableDevices);
+                
+                if (availableDevices.length > 0) {
+                    // バックカメラを優先的に選択
+                    const backCamera = availableDevices.find(device => 
+                        device.label.toLowerCase().includes('back') || 
+                        device.label.toLowerCase().includes('rear')
+                    );
+                    currentDeviceId = backCamera ? backCamera.deviceId : availableDevices[0].deviceId;
+                    
+                    // カメラ切替ボタンの表示制御
+                    if (availableDevices.length > 1) {
+                        document.getElementById('switch-camera').style.display = 'inline-block';
+                    }
+                } else {
+                    showError('カメラが見つかりませんでした。');
+                }
+            } catch (error) {
+                console.error('Scanner initialization error:', error);
+                showError('カメラの初期化に失敗しました: ' + error.message);
+            }
+        }
+
+        async function startScanning() {
+            if (!codeReader || !currentDeviceId) {
+                showError('カメラが利用できません。');
+                return;
+            }
+
+            try {
+                isScanning = true;
+                document.getElementById('start-btn').style.display = 'none';
+                document.getElementById('stop-btn').style.display = 'inline-block';
+                
+                clearResults();
+                
+                const video = document.getElementById('video');
+                
+                // スキャン開始
+                const result = await codeReader.decodeOnceFromVideoDevice(currentDeviceId, 'video');
+                
+                if (result) {
+                    handleScanResult(result.text);
+                }
+                
+            } catch (error) {
+                console.error('Scanning error:', error);
+                if (error.name !== 'NotFoundException') {
+                    showError('スキャンエラー: ' + error.message);
+                }
+            }
+        }
+
+        function stopScanning() {
+            if (codeReader) {
+                codeReader.reset();
+            }
+            isScanning = false;
+            document.getElementById('start-btn').style.display = 'inline-block';
+            document.getElementById('stop-btn').style.display = 'none';
+        }
+
+        function switchCamera() {
+            if (availableDevices.length <= 1) return;
+            
+            const currentIndex = availableDevices.findIndex(device => device.deviceId === currentDeviceId);
+            const nextIndex = (currentIndex + 1) % availableDevices.length;
+            currentDeviceId = availableDevices[nextIndex].deviceId;
+            
+            if (isScanning) {
+                stopScanning();
+                setTimeout(startScanning, 500);
+            }
+        }
+
+        function handleScanResult(code) {
+            console.log('Scanned code:', code);
+            
+            // ISBNの検証（13桁の数字）
+            if (code.length === 13 && /^\d+$/.test(code)) {
+                showSuccess(`ISBN読み取り成功: ${code}`);
+                processISBN(code);
+            } else if (code.length === 10 && /^\d+$/.test(code)) {
+                // 10桁ISBNを13桁に変換
+                const isbn13 = convertISBN10to13(code);
+                showSuccess(`ISBN読み取り成功: ${isbn13} (10桁から変換)`);
+                processISBN(isbn13);
+            } else {
+                showError(`無効なISBNコードです: ${code}`);
+                // スキャンを継続
+                setTimeout(startScanning, 2000);
+            }
+        }
+
+        function convertISBN10to13(isbn10) {
+            const prefix = '978' + isbn10.substring(0, 9);
+            let sum = 0;
+            for (let i = 0; i < 12; i++) {
+                sum += parseInt(prefix[i]) * (i % 2 === 0 ? 1 : 3);
+            }
+            const checkDigit = (10 - (sum % 10)) % 10;
+            return prefix + checkDigit;
+        }
+
+        function processManualISBN() {
+            const isbn = document.getElementById('manual-isbn').value.trim();
+            if (!isbn) {
+                showError('ISBNコードを入力してください。');
+                return;
+            }
+            
+            if (isbn.length === 13 && /^\d+$/.test(isbn)) {
+                handleScanResult(isbn);
+            } else if (isbn.length === 10 && /^\d+$/.test(isbn)) {
+                const isbn13 = convertISBN10to13(isbn);
+                handleScanResult(isbn13);
+            } else {
+                showError('13桁または10桁の数字を入力してください。');
+            }
+        }
+
+        function processISBN(isbn) {
+            stopScanning();
+            
+            // 登録画面にリダイレクト
+            const registerUrl = `register.html?isbn=${isbn}`;
+            
+            showSuccess(`
+                <p>ISBN: ${isbn}</p>
+                <p>書籍登録画面に移動します...</p>
+                <button class="btn btn-primary" onclick="window.location.href='${registerUrl}'">今すぐ移動</button>
+            `);
+            
+            // 3秒後に自動リダイレクト
+            setTimeout(() => {
+                window.location.href = registerUrl;
+            }, 3000);
+        }
+
+        function showSuccess(message) {
+            const resultArea = document.getElementById('result-area');
+            resultArea.innerHTML = `<div class="scan-result">${message}</div>`;
+        }
+
+        function showError(message) {
+            const resultArea = document.getElementById('result-area');
+            resultArea.innerHTML = `<div class="scan-error">${message}</div>`;
+        }
+
+        function clearResults() {
+            document.getElementById('result-area').innerHTML = '';
+        }
+
+        // ページを離れる時にカメラを停止
+        window.addEventListener('beforeunload', function() {
+            stopScanning();
+        });
+    </script>
+</body>
+</html>

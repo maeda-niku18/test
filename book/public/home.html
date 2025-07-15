@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>図書管理システム - ホーム</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="sidebar">
+        <h2>📚 図書管理</h2>
+        <a href="home.html">ホーム</a>
+        <a href="books.html">書籍管理</a>
+        <a href="users.html">ユーザー管理</a>
+        <a href="register.html">書籍登録</a>
+        <a href="#" onclick="logout()">ログアウト</a>
+    </div>
+
+    <div class="main-content">
+        <h1>ダッシュボード</h1>
+        <div class="card">
+            <h2>図書管理システムへようこそ</h2>
+            <p>こちらのシステムで書籍やユーザーの管理を行うことができます。</p>
+        </div>
+
+        <div class="home-buttons">
+            <a href="books.html" class="home-button">
+                <h3>📚 書籍管理</h3>
+                <p>書籍の一覧表示・詳細確認・貸出状況の管理</p>
+            </a>
+            <a href="users.html" class="home-button">
+                <h3>👤 ユーザー管理</h3>
+                <p>利用者の一覧表示・クラス別表示</p>
+            </a>
+            <a href="register.html" class="home-button">
+                <h3>📱 書籍登録</h3>
+                <p>QRコード・ISBNスキャンによる新規書籍登録</p>
+            </a>
+        </div>
+
+        <div class="card" style="margin-top: 2rem;">
+            <h3>システム概要</h3>
+            <ul>
+                <li>Firestoreベースの図書管理システム</li>
+                <li>幼稚園・保育園向けに設計</li>
+                <li>書籍の貸出状況を一目で確認</li>
+                <li>ユーザー情報の効率的な管理</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuth();
+        });
+
+        function checkAuth() {
+            const facilityId = sessionStorage.getItem('facilityId');
+            if (!facilityId) {
+                window.location.href = 'index.html';
+                return;
+            }
+        }
+
+        function logout() {
+            sessionStorage.removeItem('facilityId');
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>
