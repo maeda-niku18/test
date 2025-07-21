@@ -63,25 +63,51 @@ button:hover {
 
 #hourly {
     margin-top: 20px;
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
-    gap: 8px;
+    overflow-x: auto;
 }
 
-.hourly-item {
-    background: rgba(255, 255, 255, 0.6);
-    border-radius: 6px;
-    padding: 6px;
-    font-size: 0.9rem;
+#hourly table {
+    width: 100%;
+    border-collapse: collapse;
 }
 
-.hourly-item .emoji {
+#hourly th,
+#hourly td {
+    border: 1px solid #ccc;
+    padding: 6px 8px;
+    text-align: center;
+}
+
+#hourly tbody tr:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+#hourly .emoji {
     font-size: 1.2rem;
-    display: block;
 }
 
-.hourly-item .prob {
-    font-size: 0.8rem;
+@media (max-width: 767px) {
+    #hourly th {
+        display: none;
+    }
+    #hourly tbody tr {
+        display: flex;
+        justify-content: space-between;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        padding: 6px;
+        margin-bottom: 8px;
+    }
+    #hourly tbody td {
+        border: none;
+        padding: 0 4px;
+    }
+}
+
+@media (min-width: 768px) {
+    #app {
+        max-width: 800px;
+    }
 }
 
 section {

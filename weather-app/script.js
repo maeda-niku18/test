@@ -106,16 +106,34 @@ function getAdvice(data) {
 function showHourlyWeather(codes, probs) {
     const hourly = document.getElementById('hourly');
     hourly.innerHTML = '';
+    const table = document.createElement('table');
+    const thead = document.createElement('thead');
+    const headRow = document.createElement('tr');
+    ['時刻', '天気', '降水確率'].forEach(text => {
+        const th = document.createElement('th');
+        th.textContent = text;
+        headRow.appendChild(th);
+    });
+    thead.appendChild(headRow);
+    table.appendChild(thead);
+    const tbody = document.createElement('tbody');
     for (let i = 0; i < 24; i++) {
-        const emoji = weatherEmoji[codes[i]] || '';
+        const tr = document.createElement('tr');
+        const timeTd = document.createElement('td');
+        timeTd.textContent = `${i}時`;
+        const iconTd = document.createElement('td');
+        iconTd.className = 'emoji';
+        iconTd.textContent = weatherEmoji[codes[i]] || '';
+        const probTd = document.createElement('td');
         const prob = probs && probs[i] !== undefined ? probs[i] : null;
-        const div = document.createElement('div');
-        div.className = 'hourly-item';
-        div.innerHTML = `<div class="hour">${i}時</div>` +
-            `<div class="emoji">${emoji}</div>` +
-            `<div class="prob">${prob !== null ? prob + '%': ''}</div>`;
-        hourly.appendChild(div);
+        probTd.textContent = prob !== null ? prob + '%' : '';
+        tr.appendChild(timeTd);
+        tr.appendChild(iconTd);
+        tr.appendChild(probTd);
+        tbody.appendChild(tr);
     }
+    table.appendChild(tbody);
+    hourly.appendChild(table);
 }
 
 function showWeather(location, codeMorning, codeNoon, max, min, morning, noon) {
