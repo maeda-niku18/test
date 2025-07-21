@@ -61,6 +61,29 @@ button:hover {
     font-size: 1.2rem;
 }
 
+#hourly {
+    margin-top: 20px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+    gap: 8px;
+}
+
+.hourly-item {
+    background: rgba(255, 255, 255, 0.6);
+    border-radius: 6px;
+    padding: 6px;
+    font-size: 0.9rem;
+}
+
+.hourly-item .emoji {
+    font-size: 1.2rem;
+    display: block;
+}
+
+.hourly-item .prob {
+    font-size: 0.8rem;
+}
+
 section {
     margin-top: 12px;
     font-size: 1.1rem;
