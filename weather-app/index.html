@@ -8,9 +8,13 @@
 </head>
 <body>
     <div id="app">
-        <h1>気象と幻想のスタイリスト</h1>
+        <h1 id="location">気象と幻想のスタイリスト</h1>
         <button id="locateBtn">現在地の天気を取得</button>
-        <section id="weather"></section>
+        <div id="weather">
+            <div id="weather-morning" class="weather-item"></div>
+            <div id="weather-afternoon" class="weather-item"></div>
+            <div id="highlow"></div>
+        </div>
         <section id="clothing"></section>
         <section id="advice"></section>
         <section id="lucky"></section>
