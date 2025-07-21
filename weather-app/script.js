@@ -103,37 +103,33 @@ function getAdvice(data) {
     return '天候に合わせて快適に過ごしましょう';
 }
 
-function showHourlyWeather(codes, probs) {
+function showHourlyWeather(times, codes, probs) {
     const hourly = document.getElementById('hourly');
     hourly.innerHTML = '';
-    const table = document.createElement('table');
-    const thead = document.createElement('thead');
-    const headRow = document.createElement('tr');
-    ['時刻', '天気', '降水確率'].forEach(text => {
-        const th = document.createElement('th');
-        th.textContent = text;
-        headRow.appendChild(th);
-    });
-    thead.appendChild(headRow);
-    table.appendChild(thead);
-    const tbody = document.createElement('tbody');
-    for (let i = 0; i < 24; i++) {
-        const tr = document.createElement('tr');
-        const timeTd = document.createElement('td');
-        timeTd.textContent = `${i}時`;
-        const iconTd = document.createElement('td');
-        iconTd.className = 'emoji';
-        iconTd.textContent = weatherEmoji[codes[i]] || '';
-        const probTd = document.createElement('td');
-        const prob = probs && probs[i] !== undefined ? probs[i] : null;
-        probTd.textContent = prob !== null ? prob + '%' : '';
-        tr.appendChild(timeTd);
-        tr.appendChild(iconTd);
-        tr.appendChild(probTd);
-        tbody.appendChild(tr);
+    const container = document.createElement('div');
+    container.className = 'hourly-scroll';
+    const now = new Date();
+    for (let i = 0; i < times.length; i++) {
+        const item = document.createElement('div');
+        item.className = 'hour-item';
+        const t = new Date(times[i]);
+        item.innerHTML = `
+            <div class="hour-time">${t.getHours()}時</div>
+            <div class="hour-icon">${weatherEmoji[codes[i]] || ''}</div>
+            <div class="hour-prob">${probs[i] !== undefined ? probs[i] + '%' : ''}</div>
+        `;
+        if (t < now) item.classList.add('past');
+        container.appendChild(item);
     }
-    table.appendChild(tbody);
-    hourly.appendChild(table);
+    hourly.appendChild(container);
+}
+
+function showTomorrowWeather(codeMorning, codeNoon, max, min) {
+    const mEmoji = weatherEmoji[codeMorning] || '';
+    const nEmoji = weatherEmoji[codeNoon] || '';
+    document.getElementById('tomorrow-morning').innerHTML = `<span class="emoji">${mEmoji}</span>午前：${weatherCodes[codeMorning] || '不明'}`;
+    document.getElementById('tomorrow-afternoon').innerHTML = `<span class="emoji">${nEmoji}</span>午後：${weatherCodes[codeNoon] || '不明'}`;
+    document.getElementById('tomorrow-highlow').textContent = `最高${max}℃ / 最低${min}℃`;
 }
 
 function showWeather(location, codeMorning, codeNoon, max, min, morning, noon) {
@@ -170,18 +166,29 @@ document.getElementById('locateBtn').addEventListener('click', () => {
             fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=ja`).then(res => res.json())
         ])
         .then(([weather, place]) => {
+            const hourlyTemps = weather.hourly.temperature_2m.slice(0, 48);
+            const codes = weather.hourly.weathercode.slice(0, 48);
+            const precs = (weather.hourly.precipitation_probability || []).slice(0, 48);
+            const times = weather.hourly.time.slice(0, 48);
+
+            const tempsToday = hourlyTemps.slice(0, 24);
             const max = weather.daily.temperature_2m_max[0];
             const min = weather.daily.temperature_2m_min[0];
-            const temps = weather.hourly.temperature_2m.slice(0, 24);
-            const codes = weather.hourly.weathercode;
-            const precs = weather.hourly.precipitation_probability || [];
-            const morning = (temps[6] + temps[7] + temps[8]) / 3;
-            const noon = (temps[12] + temps[13] + temps[14]) / 3;
+            const maxT = weather.daily.temperature_2m_max[1];
+            const minT = weather.daily.temperature_2m_min[1];
+
+            const morning = (tempsToday[6] + tempsToday[7] + tempsToday[8]) / 3;
+            const noon = (tempsToday[12] + tempsToday[13] + tempsToday[14]) / 3;
             const codeMorning = codes[9];
             const codeNoon = codes[15];
+
+            const codeMorningT = codes[24 + 9];
+            const codeNoonT = codes[24 + 15];
+
             const location = (place.address.state || '') + (place.address.city || place.address.town || place.address.village || '');
             showWeather(location, codeMorning, codeNoon, max, min, morning, noon);
-            showHourlyWeather(codes.slice(0,24), precs.slice(0,24));
+            showTomorrowWeather(codeMorningT, codeNoonT, maxT, minT);
+            showHourlyWeather(times, codes, precs);
         })
         .catch(() => alert('天気情報の取得に失敗しました'));
     }, () => {
