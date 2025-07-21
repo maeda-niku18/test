@@ -103,6 +103,21 @@ function getAdvice(data) {
     return '天候に合わせて快適に過ごしましょう';
 }
 
+function showHourlyWeather(codes, probs) {
+    const hourly = document.getElementById('hourly');
+    hourly.innerHTML = '';
+    for (let i = 0; i < 24; i++) {
+        const emoji = weatherEmoji[codes[i]] || '';
+        const prob = probs && probs[i] !== undefined ? probs[i] : null;
+        const div = document.createElement('div');
+        div.className = 'hourly-item';
+        div.innerHTML = `<div class="hour">${i}時</div>` +
+            `<div class="emoji">${emoji}</div>` +
+            `<div class="prob">${prob !== null ? prob + '%': ''}</div>`;
+        hourly.appendChild(div);
+    }
+}
+
 function showWeather(location, codeMorning, codeNoon, max, min, morning, noon) {
     document.getElementById('location').textContent = location ? `${location}の天気` : '今日の天気';
     const mEmoji = weatherEmoji[codeMorning] || '';
@@ -133,7 +148,7 @@ document.getElementById('locateBtn').addEventListener('click', () => {
         const lat = pos.coords.latitude.toFixed(4);
         const lon = pos.coords.longitude.toFixed(4);
         Promise.all([
-            fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min&hourly=temperature_2m,weathercode&timezone=Asia%2FTokyo`).then(res => res.json()),
+            fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min&hourly=temperature_2m,weathercode,precipitation_probability&timezone=Asia%2FTokyo`).then(res => res.json()),
             fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=ja`).then(res => res.json())
         ])
         .then(([weather, place]) => {
@@ -141,12 +156,14 @@ document.getElementById('locateBtn').addEventListener('click', () => {
             const min = weather.daily.temperature_2m_min[0];
             const temps = weather.hourly.temperature_2m.slice(0, 24);
             const codes = weather.hourly.weathercode;
+            const precs = weather.hourly.precipitation_probability || [];
             const morning = (temps[6] + temps[7] + temps[8]) / 3;
             const noon = (temps[12] + temps[13] + temps[14]) / 3;
             const codeMorning = codes[9];
             const codeNoon = codes[15];
             const location = (place.address.state || '') + (place.address.city || place.address.town || place.address.village || '');
             showWeather(location, codeMorning, codeNoon, max, min, morning, noon);
+            showHourlyWeather(codes.slice(0,24), precs.slice(0,24));
         })
         .catch(() => alert('天気情報の取得に失敗しました'));
     }, () => {
