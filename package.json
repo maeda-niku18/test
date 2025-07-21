@@ -1,0 +1,8 @@
+{
+  "name": "test-apps",
+  "version": "1.0.0",
+  "description": "Collection of small web apps",
+  "scripts": {
+    "build": "echo Build complete"
+  }
+}
