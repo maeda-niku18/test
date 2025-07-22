@@ -83,7 +83,7 @@ button:hover {
 
 #hourly .hour-item {
     flex: 0 0 auto;
-    width: 60px;
+    width: 70px;
     border: 1px solid #ccc;
     border-radius: 6px;
     margin-right: 4px;
@@ -98,6 +98,10 @@ button:hover {
 
 #hourly .hour-icon {
     font-size: 1.2rem;
+}
+
+#hourly .hour-temp {
+    margin: 2px 0;
 }
 
 @media (min-width: 768px) {

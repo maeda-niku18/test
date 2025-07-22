@@ -103,25 +103,32 @@ function getAdvice(data) {
     return '天候に合わせて快適に過ごしましょう';
 }
 
-function showHourlyWeather(times, codes, probs) {
+function showHourlyWeather(times, temps, codes, probs) {
     const hourly = document.getElementById('hourly');
     hourly.innerHTML = '';
-    const container = document.createElement('div');
-    container.className = 'hourly-scroll';
     const now = new Date();
-    for (let i = 0; i < times.length; i++) {
-        const item = document.createElement('div');
-        item.className = 'hour-item';
-        const t = new Date(times[i]);
-        item.innerHTML = `
-            <div class="hour-time">${t.getHours()}時</div>
-            <div class="hour-icon">${weatherEmoji[codes[i]] || ''}</div>
-            <div class="hour-prob">${probs[i] !== undefined ? probs[i] + '%' : ''}</div>
-        `;
-        if (t < now) item.classList.add('past');
-        container.appendChild(item);
+
+    function makeContainer(start, end) {
+        const container = document.createElement('div');
+        container.className = 'hourly-scroll';
+        for (let i = start; i < end; i++) {
+            const item = document.createElement('div');
+            item.className = 'hour-item';
+            const t = new Date(times[i]);
+            item.innerHTML = `
+                <div class="hour-time">${t.getHours()}時</div>
+                <div class="hour-icon">${weatherEmoji[codes[i]] || ''}</div>
+                <div class="hour-temp">${temps[i]}℃</div>
+                <div class="hour-prob">${probs[i] !== undefined ? probs[i] + '%' : ''}</div>
+            `;
+            if (t < now) item.classList.add('past');
+            container.appendChild(item);
+        }
+        return container;
     }
-    hourly.appendChild(container);
+
+    hourly.appendChild(makeContainer(0, 24));
+    hourly.appendChild(makeContainer(24, 48));
 }
 
 function showTomorrowWeather(codeMorning, codeNoon, max, min) {
@@ -188,7 +195,7 @@ document.getElementById('locateBtn').addEventListener('click', () => {
             const location = (place.address.state || '') + (place.address.city || place.address.town || place.address.village || '');
             showWeather(location, codeMorning, codeNoon, max, min, morning, noon);
             showTomorrowWeather(codeMorningT, codeNoonT, maxT, minT);
-            showHourlyWeather(times, codes, precs);
+            showHourlyWeather(times, hourlyTemps, codes, precs);
         })
         .catch(() => alert('天気情報の取得に失敗しました'));
     }, () => {
