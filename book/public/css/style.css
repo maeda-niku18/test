@@ -273,3 +273,35 @@ body {
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
+
+.qr-selectable {
+  position: relative;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.qr-selectable:hover {
+  background-color: #f0f8ff;
+}
+
+.qr-selectable.selected {
+  background-color: #e6f3ff;
+  border-color: #007bff;
+}
+
+.book-checkbox {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 10;
+}
+
+.book-checkbox input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
+.book-checkbox label {
+  cursor: pointer;
+}

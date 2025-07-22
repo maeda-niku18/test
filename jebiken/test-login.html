@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ジェビケン - テスト版</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="login-card">
+            <h1>ジェビケン</h1>
+            <p class="subtitle">勤怠管理システム</p>
+            
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="email">ユーザーID</label>
+                    <input type="text" id="email" name="email" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">パスワード</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                
+                <button type="submit" class="login-btn">ログイン</button>
+            </form>
+            
+            <div id="error-message" class="error-message" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        // シンプルなテスト版（Firebaseなし）
+        class JebikenApp {
+            constructor() {
+                this.currentUser = null;
+                this.init();
+            }
+
+            init() {
+                console.log('アプリ初期化開始');
+                this.setupEventListeners();
+            }
+
+            setupEventListeners() {
+                const loginForm = document.getElementById('loginForm');
+                if (loginForm) {
+                    loginForm.addEventListener('submit', (e) => this.handleLogin(e));
+                    console.log('ログインフォームのイベントリスナー設定完了');
+                } else {
+                    console.error('ログインフォームが見つかりません');
+                }
+            }
+
+            async handleLogin(e) {
+                e.preventDefault();
+                console.log('ログイン処理開始');
+                
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                
+                console.log('入力値:', email, password);
+
+                // テスト用の簡易認証
+                if (email === 'abc' && password === '123') {
+                    this.currentUser = {
+                        id: 'admin',
+                        name: '太郎',
+                        email: 'abc',
+                        role: 'admin'
+                    };
+                    console.log('認証成功:', this.currentUser);
+                    this.showDashboard();
+                } else {
+                    console.log('認証失敗');
+                    this.showError('ユーザーIDまたはパスワードが間違っています');
+                }
+            }
+
+            showError(message) {
+                console.log('エラー表示:', message);
+                const errorDiv = document.getElementById('error-message');
+                if (errorDiv) {
+                    errorDiv.textContent = message;
+                    errorDiv.style.display = 'block';
+                    setTimeout(() => {
+                        errorDiv.style.display = 'none';
+                    }, 5000);
+                }
+            }
+
+            showDashboard() {
+                console.log('ダッシュボード表示開始');
+                
+                try {
+                    document.body.innerHTML = `
+                        <div class="container">
+                            <div class="dashboard">
+                                <h2>ジェビケン ダッシュボード</h2>
+                                <div class="user-info">
+                                    <p><strong>ユーザー:</strong> ${this.currentUser.name} (${this.currentUser.role === 'admin' ? '管理者' : '一般ユーザー'})</p>
+                                    <p><strong>ユーザーID:</strong> ${this.currentUser.email}</p>
+                                </div>
+
+                                <div class="admin-section">
+                                    <h3>管理者機能</h3>
+                                    <div class="admin-buttons">
+                                        <button class="admin-btn" onclick="alert('ユーザー管理機能')">ユーザー管理</button>
+                                        <button class="admin-btn" onclick="alert('有給承認機能')">有給承認</button>
+                                        <button class="admin-btn" onclick="alert('CSV出力機能')">CSV出力</button>
+                                    </div>
+                                </div>
+
+                                <button onclick="location.reload()" style="margin-top: 20px; padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 5px; cursor: pointer;">ログアウト</button>
+                            </div>
+                        </div>
+                    `;
+                    console.log('ダッシュボード表示完了');
+                } catch (error) {
+                    console.error('ダッシュボード表示エラー:', error);
+                }
+            }
+        }
+
+        // アプリ起動
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM読み込み完了');
+            const app = new JebikenApp();
+            window.app = app;
+        });
+    </script>
+</body>
+</html>

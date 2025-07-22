@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理者ダッシュボード - ジェビケン</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .nav-tabs {
+            display: flex;
+            border-bottom: 2px solid #ddd;
+            margin-bottom: 20px;
+        }
+        .nav-tab {
+            padding: 10px 20px;
+            background: #f8f9fa;
+            border: none;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+        }
+        .nav-tab.active {
+            background: white;
+            border-bottom-color: #007bff;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .user-list {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .user-item {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .user-info h4 {
+            margin: 0 0 5px 0;
+        }
+        .user-info p {
+            margin: 0;
+            color: #666;
+        }
+        .user-actions button {
+            margin-left: 10px;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        .create-user-form {
+            display: grid;
+            gap: 15px;
+            max-width: 400px;
+            margin-bottom: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="dashboard">
+            <div class="dashboard-header">
+                <h2>管理者ダッシュボード</h2>
+                <div class="user-info">
+                    <span id="userName"></span>
+                    <button onclick="logout()" class="logout-btn">ログアウト</button>
+                </div>
+            </div>
+
+            <div class="nav-tabs">
+                <button class="nav-tab active" onclick="showTab('user-management')">ユーザー管理</button>
+                <button class="nav-tab" onclick="showTab('leave-approval')">有給承認</button>
+                <button class="nav-tab" onclick="showTab('reports')">レポート</button>
+            </div>
+
+            <div id="user-management" class="tab-content active">
+                <h3>新規ユーザー作成</h3>
+                <form id="createUserForm" class="create-user-form">
+                    <input type="text" id="newUserName" placeholder="名前" required>
+                    <input type="email" id="newUserEmail" placeholder="メールアドレス" required>
+                    <input type="password" id="newUserPassword" placeholder="パスワード" required>
+                    <select id="newUserRole">
+                        <option value="user">一般ユーザー</option>
+                        <option value="admin">管理者</option>
+                    </select>
+                    <button type="submit" class="admin-btn">ユーザー作成</button>
+                </form>
+
+                <h3>ユーザー一覧</h3>
+                <div id="userList" class="user-list">
+                    <!-- ユーザー一覧がここに表示される -->
+                </div>
+            </div>
+
+            <div id="leave-approval" class="tab-content">
+                <h3>有給申請承認</h3>
+                <div id="leaveRequests">
+                    <!-- 有給申請一覧がここに表示される -->
+                </div>
+            </div>
+
+            <div id="reports" class="tab-content">
+                <h3>レポート・CSV出力</h3>
+                <div style="margin: 20px 0;">
+                    <label for="exportMonth">出力月を選択:</label>
+                    <input type="month" id="exportMonth" value="">
+                    <button onclick="generateSampleData()" class="admin-btn" style="margin-right: 10px;">🧪 テストデータ生成</button>
+                    <button onclick="exportCSV()" class="admin-btn">📊 CSV出力</button>
+                </div>
+                <div id="csv-status" style="margin-top: 20px;"></div>
+                <div id="csv-preview" style="margin-top: 20px; max-height: 400px; overflow-y: auto;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { JebikenApp } from './firebase-app.js';
+
+        class AdminDashboard {
+            constructor() {
+                this.app = new JebikenApp();
+                this.init();
+            }
+
+            async init() {
+                if (!this.app.requireAdmin()) return;
+                
+                const user = this.app.getCurrentUser();
+                document.getElementById('userName').textContent = `${user.name} (管理者)`;
+                
+                // 現在の月をデフォルトに設定
+                document.getElementById('exportMonth').value = new Date().toISOString().slice(0, 7);
+                
+                this.setupEventListeners();
+                await this.loadUsers();
+                await this.loadLeaveRequests();
+            }
+
+            setupEventListeners() {
+                document.getElementById('createUserForm').addEventListener('submit', (e) => this.handleCreateUser(e));
+            }
+
+            async handleCreateUser(e) {
+                e.preventDefault();
+                
+                const userData = {
+                    name: document.getElementById('newUserName').value,
+                    email: document.getElementById('newUserEmail').value,
+                    password: document.getElementById('newUserPassword').value,
+                    role: document.getElementById('newUserRole').value
+                };
+
+                try {
+                    await this.app.createUser(userData);
+                    alert('ユーザーを作成しました');
+                    
+                    // フォームをリセット
+                    document.getElementById('createUserForm').reset();
+                    
+                    // ユーザー一覧を更新
+                    await this.loadUsers();
+                } catch (error) {
+                    alert('ユーザー作成に失敗しました: ' + error.message);
+                }
+            }
+
+            async loadUsers() {
+                try {
+                    const users = await this.app.getAllUsers();
+                    const userList = document.getElementById('userList');
+                    
+                    userList.innerHTML = users.map(user => `
+                        <div class="user-item">
+                            <div class="user-info">
+                                <h4>${user.name}</h4>
+                                <p>メール: ${user.email}</p>
+                                <p>役割: ${user.role === 'admin' ? '管理者' : '一般ユーザー'}</p>
+                                <p>作成日: ${new Date(user.createdAt).toLocaleDateString('ja-JP')}</p>
+                            </div>
+                            <div class="user-actions">
+                                ${user.id !== 'admin' ? `<button class="btn-danger" onclick="deleteUser('${user.id}')">削除</button>` : ''}
+                            </div>
+                        </div>
+                    `).join('');
+                } catch (error) {
+                    console.error('ユーザー読み込みエラー:', error);
+                }
+            }
+
+            async loadLeaveRequests() {
+                try {
+                    const requests = await this.app.getLeaveRequests();
+                    const leaveRequests = document.getElementById('leaveRequests');
+                    
+                    if (requests.length === 0) {
+                        leaveRequests.innerHTML = '<p>有給申請はありません</p>';
+                        return;
+                    }
+
+                    leaveRequests.innerHTML = requests.map(request => `
+                        <div class="user-item">
+                            <div class="user-info">
+                                <h4>${request.userName}</h4>
+                                <p>申請日: ${request.date}</p>
+                                <p>理由: ${request.reason}</p>
+                                <p>申請日時: ${new Date(request.requestedAt).toLocaleString('ja-JP')}</p>
+                                <p>状態: ${request.approved ? '✅ 承認済み' : '⏳ 未承認'}</p>
+                            </div>
+                            <div class="user-actions">
+                                ${!request.approved ? `<button class="admin-btn" onclick="approveLeave('${request.userId}', '${request.id}')">承認</button>` : ''}
+                            </div>
+                        </div>
+                    `).join('');
+                } catch (error) {
+                    console.error('有給申請読み込みエラー:', error);
+                }
+            }
+
+            async deleteUser(userId) {
+                if (!confirm('本当にこのユーザーを削除しますか？')) return;
+                
+                try {
+                    await this.app.deleteUser(userId);
+                    alert('ユーザーを削除しました');
+                    await this.loadUsers();
+                } catch (error) {
+                    alert('削除に失敗しました: ' + error.message);
+                }
+            }
+
+            async approveLeave(userId, requestId) {
+                try {
+                    await this.app.approveLeaveRequest(userId, requestId);
+                    alert('有給申請を承認しました');
+                    await this.loadLeaveRequests();
+                } catch (error) {
+                    alert('承認に失敗しました: ' + error.message);
+                }
+            }
+
+            async exportCSV() {
+                const monthInput = document.getElementById('exportMonth').value;
+                if (!monthInput) {
+                    alert('出力月を選択してください');
+                    return;
+                }
+
+                const statusDiv = document.getElementById('csv-status');
+                const previewDiv = document.getElementById('csv-preview');
+                
+                statusDiv.innerHTML = '<p>📊 CSV生成中...</p>';
+                
+                try {
+                    const [year, month] = monthInput.split('-');
+                    const csvData = await this.generateCSVData(year, month);
+                    
+                    if (csvData.length === 0) {
+                        statusDiv.innerHTML = '<p style="color: orange;">⚠️ 指定された月のデータが見つかりません</p>';
+                        previewDiv.innerHTML = '';
+                        return;
+                    }
+
+                    // CSVファイルをダウンロード
+                    this.downloadCSV(csvData, `jebiken_${monthInput}.csv`);
+                    
+                    // プレビュー表示
+                    const previewHtml = this.generateCSVPreview(csvData);
+                    previewDiv.innerHTML = previewHtml;
+                    
+                    statusDiv.innerHTML = '<p style="color: green;">✅ CSV出力完了！ダウンロードが開始されます</p>';
+                    
+                } catch (error) {
+                    console.error('CSV生成エラー:', error);
+                    statusDiv.innerHTML = '<p style="color: red;">❌ CSV生成に失敗しました: ' + error.message + '</p>';
+                }
+            }
+
+            async generateCSVData(year, month) {
+                const startDate = new Date(year, month - 1, 1);
+                const endDate = new Date(year, month, 0);
+                const csvRows = [];
+                
+                // CSVヘッダー
+                csvRows.push([
+                    'ユーザー名',
+                    'メール',
+                    '日付',
+                    '出勤時刻',
+                    '休憩開始',
+                    '休憩終了',
+                    '退勤時刻',
+                    '労働時間',
+                    '位置情報',
+                    '有給'
+                ]);
+
+                // 全ユーザーを取得
+                const users = await this.app.getAllUsers();
+                const userList = users.filter(user => user.role === 'user');
+
+                for (const user of userList) {
+                    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+                        const dateStr = d.toISOString().split('T')[0];
+                        
+                        // 勤怠データを取得（ローカルストレージから）
+                        const attendanceData = JSON.parse(localStorage.getItem(`attendance_${dateStr}`) || '{}');
+                        
+                        // 有給データを取得
+                        const leaveRequests = await this.app.getLeaveRequests(user.id);
+                        const isPaidLeave = leaveRequests.some(req => req.date === dateStr && req.approved);
+                        
+                        // データが存在する場合のみ追加
+                        if (Object.keys(attendanceData).length > 0 || isPaidLeave) {
+                            const startTime = attendanceData.startTime ? 
+                                new Date(attendanceData.startTime).toLocaleTimeString('ja-JP') : '';
+                            const breakStart = attendanceData.breakStartTime ? 
+                                new Date(attendanceData.breakStartTime).toLocaleTimeString('ja-JP') : '';
+                            const breakEnd = attendanceData.breakEndTime ? 
+                                new Date(attendanceData.breakEndTime).toLocaleTimeString('ja-JP') : '';
+                            const endTime = attendanceData.endTime ? 
+                                new Date(attendanceData.endTime).toLocaleTimeString('ja-JP') : '';
+                            
+                            // 労働時間計算
+                            let workHours = '';
+                            if (attendanceData.startTime && attendanceData.endTime) {
+                                const start = new Date(attendanceData.startTime);
+                                const end = new Date(attendanceData.endTime);
+                                let workMinutes = (end - start) / (1000 * 60);
+                                
+                                if (attendanceData.breakStartTime && attendanceData.breakEndTime) {
+                                    const breakStart = new Date(attendanceData.breakStartTime);
+                                    const breakEnd = new Date(attendanceData.breakEndTime);
+                                    const breakMinutes = (breakEnd - breakStart) / (1000 * 60);
+                                    workMinutes -= breakMinutes;
+                                }
+                                
+                                workHours = `${Math.floor(workMinutes / 60)}:${String(Math.floor(workMinutes % 60)).padStart(2, '0')}`;
+                            }
+                            
+                            // 位置情報
+                            let locationInfo = '';
+                            if (attendanceData.location) {
+                                if (attendanceData.location.status === 'success') {
+                                    locationInfo = `${attendanceData.location.lat.toFixed(4)}, ${attendanceData.location.lng.toFixed(4)}`;
+                                } else {
+                                    locationInfo = '取得失敗';
+                                }
+                            }
+                            
+                            const paidLeaveStatus = isPaidLeave ? '有給' : '';
+                            
+                            csvRows.push([
+                                user.name,
+                                user.email,
+                                dateStr,
+                                startTime,
+                                breakStart,
+                                breakEnd,
+                                endTime,
+                                workHours,
+                                locationInfo,
+                                paidLeaveStatus
+                            ]);
+                        }
+                    }
+                }
+
+                return csvRows;
+            }
+
+            generateCSVPreview(csvData) {
+                if (csvData.length === 0) return '';
+                
+                let html = '<h4>CSV プレビュー</h4>';
+                html += '<table style="border-collapse: collapse; width: 100%; font-size: 0.9rem;">';
+                
+                // ヘッダー
+                html += '<tr>';
+                csvData[0].forEach(header => {
+                    html += `<th style="border: 1px solid #ddd; padding: 8px; background: #f5f5f5;">${header}</th>`;
+                });
+                html += '</tr>';
+                
+                // データ行（最初の10行のみ表示）
+                const previewRows = csvData.slice(1, 11);
+                previewRows.forEach(row => {
+                    html += '<tr>';
+                    row.forEach(cell => {
+                        html += `<td style="border: 1px solid #ddd; padding: 8px;">${cell}</td>`;
+                    });
+                    html += '</tr>';
+                });
+                
+                if (csvData.length > 11) {
+                    html += `<tr><td colspan="${csvData[0].length}" style="text-align: center; padding: 10px; font-style: italic;">...他 ${csvData.length - 11} 件</td></tr>`;
+                }
+                
+                html += '</table>';
+                return html;
+            }
+
+            downloadCSV(csvData, filename) {
+                // CSVデータを文字列に変換
+                const csvString = csvData.map(row => 
+                    row.map(field => `"${field}"`).join(',')
+                ).join('\n');
+                
+                // BOMを追加してExcelで文字化けを防ぐ
+                const bom = '\uFEFF';
+                const blob = new Blob([bom + csvString], { type: 'text/csv;charset=utf-8;' });
+                
+                // ダウンロード用のリンクを作成
+                const link = document.createElement('a');
+                const url = URL.createObjectURL(blob);
+                link.setAttribute('href', url);
+                link.setAttribute('download', filename);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+            }
+
+            generateSampleData() {
+                const today = new Date();
+                const currentMonth = today.getMonth();
+                const currentYear = today.getFullYear();
+                
+                let generatedDays = 0;
+                
+                // 今月の1日から今日までのサンプル勤怠データを生成
+                for (let day = 1; day <= today.getDate(); day++) {
+                    const date = new Date(currentYear, currentMonth, day);
+                    const dateStr = date.toISOString().split('T')[0];
+                    
+                    // 平日のみ勤怠データを生成
+                    if (date.getDay() !== 0 && date.getDay() !== 6) {
+                        const sampleAttendance = {
+                            startTime: new Date(date.getFullYear(), date.getMonth(), date.getDate(), 9, 0, 0).toISOString(),
+                            breakStartTime: new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0).toISOString(),
+                            breakEndTime: new Date(date.getFullYear(), date.getMonth(), date.getDate(), 13, 0, 0).toISOString(),
+                            endTime: new Date(date.getFullYear(), date.getMonth(), date.getDate(), 18, 0, 0).toISOString(),
+                            location: {
+                                lat: 35.6812 + (Math.random() - 0.5) * 0.01,
+                                lng: 139.7671 + (Math.random() - 0.5) * 0.01,
+                                status: 'success',
+                                message: 'GPS位置情報取得成功'
+                            }
+                        };
+                        
+                        localStorage.setItem(`attendance_${dateStr}`, JSON.stringify(sampleAttendance));
+                        generatedDays++;
+                    }
+                }
+                
+                alert(`今月のサンプル勤怠データを生成しました！（${generatedDays}日分）\nCSV出力をテストできます。`);
+            }
+        }
+
+        const dashboard = new AdminDashboard();
+
+        // グローバル関数
+        window.showTab = function(tabId) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
+            
+            document.getElementById(tabId).classList.add('active');
+            event.target.classList.add('active');
+        };
+
+        window.deleteUser = function(userId) {
+            dashboard.deleteUser(userId);
+        };
+
+        window.approveLeave = function(userId, requestId) {
+            dashboard.approveLeave(userId, requestId);
+        };
+
+        window.logout = function() {
+            dashboard.app.logout();
+        };
+
+        window.exportCSV = function() {
+            dashboard.exportCSV();
+        };
+
+        window.generateSampleData = function() {
+            dashboard.generateSampleData();
+        };
+    </script>
+</body>
+</html>

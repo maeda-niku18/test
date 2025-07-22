@@ -84,7 +84,7 @@
         function checkAuth() {
             const facilityId = sessionStorage.getItem('facilityId');
             if (!facilityId) {
-                window.location.href = 'index.html';
+                window.location.href = '../index.html';
                 return;
             }
         }
@@ -246,7 +246,7 @@
 
         function logout() {
             sessionStorage.removeItem('facilityId');
-            window.location.href = 'index.html';
+            window.location.href = '../index.html';
         }
 
         // URL パラメータから ISBN を受け取る処理

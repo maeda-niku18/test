@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ログイン - ジェビケン</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="login-card">
+            <h1>ジェビケン</h1>
+            <p class="subtitle">勤怠管理システム</p>
+            
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="email">メールアドレス</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">パスワード</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                
+                <button type="submit" class="login-btn">ログイン</button>
+            </form>
+            
+            <div id="error-message" class="error-message" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { JebikenApp } from './firebase-app.js';
+
+        class LoginManager {
+            constructor() {
+                this.app = new JebikenApp();
+                this.init();
+            }
+
+            async init() {
+                await this.app.initializeDefaultAdmin();
+                this.setupEventListeners();
+            }
+
+            setupEventListeners() {
+                const loginForm = document.getElementById('loginForm');
+                loginForm.addEventListener('submit', (e) => this.handleLogin(e));
+            }
+
+            async handleLogin(e) {
+                e.preventDefault();
+                
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+
+                try {
+                    const user = await this.app.login(email, password);
+                    
+                    if (user) {
+                        // ログイン成功時の画面遷移
+                        if (user.role === 'admin') {
+                            window.location.href = 'admin-dashboard.html';
+                        } else {
+                            window.location.href = 'user-dashboard.html';
+                        }
+                    } else {
+                        this.showError('メールアドレスまたはパスワードが間違っています');
+                    }
+                } catch (error) {
+                    console.error('ログインエラー:', error);
+                    this.showError('ログインエラーが発生しました');
+                }
+            }
+
+            showError(message) {
+                const errorDiv = document.getElementById('error-message');
+                errorDiv.textContent = message;
+                errorDiv.style.display = 'block';
+                setTimeout(() => {
+                    errorDiv.style.display = 'none';
+                }, 5000);
+            }
+        }
+
+        new LoginManager();
+    </script>
+</body>
+</html>

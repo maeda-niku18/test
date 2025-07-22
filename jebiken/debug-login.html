@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>デバッグ用ログイン - ジェビケン</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .debug-panel {
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
+        .log-entry {
+            margin: 5px 0;
+            padding: 2px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .log-error {
+            color: #dc3545;
+        }
+        .log-success {
+            color: #28a745;
+        }
+        .log-info {
+            color: #007bff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="login-card">
+            <h1>ジェビケン (デバッグ版)</h1>
+            <p class="subtitle">勤怠管理システム</p>
+            
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="email">メールアドレス</label>
+                    <input type="email" id="email" name="email" value="aaa@bbb.com" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">パスワード</label>
+                    <input type="password" id="password" name="password" value="123" required>
+                </div>
+                
+                <button type="submit" class="login-btn">ログイン</button>
+            </form>
+            
+            <div id="error-message" class="error-message" style="display: none;"></div>
+            
+            <div class="debug-panel">
+                <h3>デバッグログ</h3>
+                <div id="debugLog"></div>
+                <button onclick="clearLog()" style="margin-top: 10px; padding: 5px 10px; background: #6c757d; color: white; border: none; border-radius: 3px;">ログクリア</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { JebikenApp } from './firebase-app.js';
+
+        class DebugLoginManager {
+            constructor() {
+                this.app = new JebikenApp();
+                this.debugLog = document.getElementById('debugLog');
+                this.init();
+            }
+
+            async init() {
+                this.log('システム初期化開始', 'info');
+                try {
+                    await this.app.initializeDefaultAdmin();
+                    this.log('管理者初期化完了', 'success');
+                } catch (error) {
+                    this.log(`管理者初期化エラー: ${error.message}`, 'error');
+                }
+                this.setupEventListeners();
+            }
+
+            setupEventListeners() {
+                const loginForm = document.getElementById('loginForm');
+                loginForm.addEventListener('submit', (e) => this.handleLogin(e));
+                this.log('イベントリスナー設定完了', 'info');
+            }
+
+            async handleLogin(e) {
+                e.preventDefault();
+                
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                
+                this.log(`ログイン試行: ${email}`, 'info');
+                this.log(`パスワード長: ${password.length}文字`, 'info');
+
+                try {
+                    // SHA-256ハッシュ化をデバッグ
+                    const hashedPassword = await this.app.sha256(password);
+                    this.log(`SHA-256ハッシュ: ${hashedPassword}`, 'info');
+                    
+                    // ログイン試行
+                    const user = await this.app.login(email, password);
+                    
+                    if (user) {
+                        this.log(`ログイン成功: ${JSON.stringify(user)}`, 'success');
+                        
+                        // 画面遷移
+                        if (user.role === 'admin') {
+                            this.log('管理者ダッシュボードに遷移', 'info');
+                            window.location.href = 'admin-dashboard.html';
+                        } else {
+                            this.log('ユーザーダッシュボードに遷移', 'info');
+                            window.location.href = 'user-dashboard.html';
+                        }
+                    } else {
+                        this.log('ログイン失敗: ユーザーが見つかりません', 'error');
+                        this.showError('メールアドレスまたはパスワードが間違っています');
+                    }
+                } catch (error) {
+                    this.log(`ログインエラー: ${error.message}`, 'error');
+                    this.showError('ログインエラーが発生しました: ' + error.message);
+                }
+            }
+
+            showError(message) {
+                const errorDiv = document.getElementById('error-message');
+                errorDiv.textContent = message;
+                errorDiv.style.display = 'block';
+                setTimeout(() => {
+                    errorDiv.style.display = 'none';
+                }, 5000);
+            }
+
+            log(message, type = 'info') {
+                const timestamp = new Date().toLocaleTimeString();
+                const logEntry = document.createElement('div');
+                logEntry.className = `log-entry log-${type}`;
+                logEntry.textContent = `[${timestamp}] ${message}`;
+                this.debugLog.appendChild(logEntry);
+                this.debugLog.scrollTop = this.debugLog.scrollHeight;
+                
+                // コンソールにも出力
+                console.log(`[${timestamp}] ${message}`);
+            }
+
+            clearLog() {
+                this.debugLog.innerHTML = '';
+                this.log('ログクリア', 'info');
+            }
+        }
+
+        const debugManager = new DebugLoginManager();
+        
+        // グローバル関数
+        window.clearLog = () => debugManager.clearLog();
+    </script>
+</body>
+</html>

@@ -49,12 +49,69 @@ h1 {
     100% { text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1), 0 0 20px rgba(231, 76, 60, 0.6); }
 }
 
+.mode-selection {
+    text-align: center;
+    margin-bottom: 20px;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.mode-selection h3 {
+    margin-bottom: 20px;
+    color: #2c3e50;
+    font-size: 1.3rem;
+}
+
+.mode-buttons {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.mode-btn {
+    padding: 15px 30px;
+    border: none;
+    border-radius: 25px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    color: white;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    min-width: 180px;
+}
+
+.mode-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+    background: linear-gradient(45deg, #5a6fd8, #6a4190);
+}
+
+.game-content {
+    margin-bottom: 20px;
+}
+
 .game-info {
     display: flex;
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
     gap: 15px;
+}
+
+.game-controls {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.cpu-rule {
+    color: #e74c3c;
+    font-weight: 600;
 }
 
 .current-player-info {

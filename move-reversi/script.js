@@ -3,6 +3,8 @@ let board = [];
 let currentPlayer = 0; // 0:黒, 1:白
 let gameOver = false;
 let nextMoveDirection = null;
+let gameMode = null; // 'pvp' or 'pvc'
+let isCpuTurn = false;
 
 const PLAYERS = [
     { name: '黒プレイヤー', color: 'black', className: 'black' },
@@ -34,6 +36,16 @@ const gameOverModal = document.getElementById('game-over-modal');
 const newGameBtn = document.getElementById('new-game-btn');
 const closeModalBtn = document.getElementById('close-modal-btn');
 const arrowIcon = document.getElementById('arrow-icon');
+const modeSelection = document.getElementById('mode-selection');
+const gameContent = document.getElementById('game-content');
+const gameLayout = document.getElementById('game-layout');
+const rules = document.getElementById('rules');
+const cpuRule = document.getElementById('cpu-rule');
+const playerVsPlayerBtn = document.getElementById('player-vs-player-btn');
+const playerVsCpuBtn = document.getElementById('player-vs-cpu-btn');
+const modeChangeBtn = document.getElementById('mode-change-btn');
+const blackLabel = document.getElementById('black-label');
+const whiteLabel = document.getElementById('white-label');
 
 // ボードの初期化
 function initializeBoard() {
@@ -146,7 +158,15 @@ function flipPieces(row, col, player) {
 
 // 手を打つ
 function makeMove(row, col) {
-    if (!isValidMove(row, col, currentPlayer) || gameOver) return;
+    console.log(`makeMove呼び出し: (${row}, ${col}), currentPlayer=${currentPlayer}, gameOver=${gameOver}, isCpuTurn=${isCpuTurn}`);
+    console.log(`有効な手かチェック: ${isValidMove(row, col, currentPlayer)}`);
+    
+    if (!isValidMove(row, col, currentPlayer) || gameOver || isCpuTurn) {
+        console.log('makeMove条件チェックでリターン');
+        return;
+    }
+    
+    console.log(`${currentPlayer === 0 ? '黒' : '白'}プレイヤーがコマを配置: (${row}, ${col})`);
     
     // コマを配置してひっくり返す
     board[row][col] = currentPlayer;
@@ -159,6 +179,7 @@ function makeMove(row, col) {
     setTimeout(() => {
         // 全コマを移動
         moveAllPieces();
+        console.log('移動完了');
         
         // 次の移動方向を生成
         generateNextMoveDirection();
@@ -261,10 +282,14 @@ function moveAllPieces() {
 
 // 次のプレイヤーに交代
 function nextPlayer() {
+    const prevPlayer = currentPlayer;
     currentPlayer = (currentPlayer + 1) % 2;
+    
+    console.log(`ターン交代: ${prevPlayer === 0 ? '黒' : '白'} → ${currentPlayer === 0 ? '黒' : '白'}`);
     
     // 現在のプレイヤーが置けるかチェック
     if (!hasValidMoves(currentPlayer)) {
+        console.log(`${currentPlayer === 0 ? '黒' : '白'}は置ける手がありません - パス`);
         // 置けない場合は相手のターンに戻す
         currentPlayer = (currentPlayer + 1) % 2;
         
@@ -279,14 +304,34 @@ function nextPlayer() {
     
     renderBoard();
     updateUI();
+    
+    // CPUのターンの場合は自動で手を打つ
+    if (gameMode === 'pvc' && currentPlayer === 1) {
+        isCpuTurn = true;
+        console.log('CPUのターン開始');
+        // 少し待ってからCPUが手を打つ（移動後の状態で判定）
+        setTimeout(() => {
+            makeCpuMove();
+        }, 1000);
+    } else {
+        isCpuTurn = false;
+        if (gameMode === 'pvc') {
+            console.log('プレイヤーのターン開始');
+        }
+    }
 }
 
-// 有効な手があるかチェック
+// 有効な手があるかチェック（方向選択に関係なく純粋にリバーシのルールで判定）
 function hasValidMoves(player) {
     for (let row = 0; row < 8; row++) {
         for (let col = 0; col < 8; col++) {
-            if (isValidMove(row, col, player)) {
-                return true;
+            if (board[row][col] === null) {
+                // 各方向に対してひっくり返せるかチェック
+                for (let direction of DIRECTIONS) {
+                    if (canFlip(row, col, direction[0], direction[1], player)) {
+                        return true;
+                    }
+                }
             }
         }
     }
@@ -335,7 +380,19 @@ function calculateScores() {
 function updateUI() {
     // 現在のプレイヤー表示を更新
     currentPlayerPiece.className = `piece ${PLAYERS[currentPlayer].className}`;
-    currentPlayerName.textContent = `${PLAYERS[currentPlayer].name}のターン`;
+    
+    // プレイヤー名を更新（CPU対戦の場合は特別表示）
+    if (gameMode === 'pvc') {
+        if (currentPlayer === 0) {
+            currentPlayerName.textContent = 'あなたのターン';
+        } else if (isCpuTurn) {
+            currentPlayerName.textContent = 'CPUが考え中...';
+        } else {
+            currentPlayerName.textContent = 'CPUのターン';
+        }
+    } else {
+        currentPlayerName.textContent = `${PLAYERS[currentPlayer].name}のターン`;
+    }
     
     // 現在のプレイヤー情報エリアのクラスを更新
     const currentPlayerInfo = document.querySelector('.current-player-info');
@@ -355,9 +412,83 @@ function updateUI() {
     document.getElementById('white-score').textContent = scores[1];
 }
 
+// CPUの手を選択して実行
+function makeCpuMove() {
+    if (gameOver || currentPlayer !== 1) return;
+    
+    console.log('CPUが検討中...');
+    
+    const bestMove = findBestMove();
+    if (bestMove) {
+        console.log(`CPU選択完了: (${bestMove.row}, ${bestMove.col}) - ${bestMove.flips}個ひっくり返し`);
+        // CPUが手を打つ前にisCpuTurnをfalseにする
+        isCpuTurn = false;
+        makeMove(bestMove.row, bestMove.col);
+    } else {
+        console.log('CPUが打てる手がありません');
+        // 手がない場合はパス（次のプレイヤーへ）
+        isCpuTurn = false;
+        nextPlayer();
+    }
+}
+
+// 最適な手を探す（より多くひっくり返せる手を選択）
+function findBestMove() {
+    let validMoves = [];
+    
+    // すべての有効な手を収集
+    for (let row = 0; row < 8; row++) {
+        for (let col = 0; col < 8; col++) {
+            if (isValidMove(row, col, 1)) {
+                const flips = countFlips(row, col, 1);
+                validMoves.push({ row, col, flips });
+            }
+        }
+    }
+    
+    // 有効な手がない場合はnullを返す
+    if (validMoves.length === 0) {
+        return null;
+    }
+    
+    // 最も多くひっくり返せる手を見つける
+    let maxFlips = Math.max(...validMoves.map(move => move.flips));
+    let bestMoves = validMoves.filter(move => move.flips === maxFlips);
+    
+    // 同じ数の場合はランダムに選択
+    const randomIndex = Math.floor(Math.random() * bestMoves.length);
+    return bestMoves[randomIndex];
+}
+
+// ひっくり返せるコマの数を数える
+function countFlips(row, col, player) {
+    let totalFlips = 0;
+    
+    for (let direction of DIRECTIONS) {
+        if (canFlip(row, col, direction[0], direction[1], player)) {
+            let r = row + direction[0];
+            let c = col + direction[1];
+            let flips = 0;
+            
+            while (r >= 0 && r < 8 && c >= 0 && c < 8 && board[r][c] !== player) {
+                if (board[r][c] !== null) {
+                    flips++;
+                }
+                r += direction[0];
+                c += direction[1];
+            }
+            
+            totalFlips += flips;
+        }
+    }
+    
+    return totalFlips;
+}
+
 // ゲーム終了
 function endGame() {
     gameOver = true;
+    isCpuTurn = false;
     const scores = calculateScores();
     
     // 勝者判定
@@ -421,14 +552,67 @@ function closeModal() {
 }
 
 // イベントリスナー
-resetBtn.addEventListener('click', initializeBoard);
+resetBtn.addEventListener('click', () => {
+    if (gameMode) {
+        startGame(gameMode);
+    }
+});
 newGameBtn.addEventListener('click', () => {
     closeModal();
-    initializeBoard();
+    if (gameMode) {
+        startGame(gameMode);
+    }
 });
 closeModalBtn.addEventListener('click', closeModal);
 
+// ゲームモード選択イベントリスナー
+function setupModeSelection() {
+    playerVsPlayerBtn.addEventListener('click', () => {
+        startGame('pvp');
+    });
+    
+    playerVsCpuBtn.addEventListener('click', () => {
+        startGame('pvc');
+    });
+    
+    modeChangeBtn.addEventListener('click', () => {
+        showModeSelection();
+    });
+}
+
+// ゲームモード選択を表示
+function showModeSelection() {
+    modeSelection.classList.remove('hidden');
+    gameContent.classList.add('hidden');
+    gameLayout.classList.add('hidden');
+    rules.classList.add('hidden');
+    cpuRule.classList.add('hidden');
+}
+
+// ゲーム開始
+function startGame(mode) {
+    gameMode = mode;
+    modeSelection.classList.add('hidden');
+    gameContent.classList.remove('hidden');
+    gameLayout.classList.remove('hidden');
+    rules.classList.remove('hidden');
+    
+    // ラベルを更新
+    if (mode === 'pvc') {
+        blackLabel.textContent = '黒（プレイヤー）';
+        whiteLabel.textContent = '白（CPU）';
+        cpuRule.classList.remove('hidden');
+    } else {
+        blackLabel.textContent = '黒';
+        whiteLabel.textContent = '白';
+        cpuRule.classList.add('hidden');
+    }
+    
+    initializeBoard();
+}
+
 // ゲーム開始
 document.addEventListener('DOMContentLoaded', () => {
-    initializeBoard();
+    setupModeSelection();
+    showModeSelection();
 });

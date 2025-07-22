@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>図書管理システム - ログイン</title>
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="public/css/style.css">
 </head>
 <body>
     <div class="login-container">
@@ -59,7 +59,7 @@
                 try {
                     await authenticateFacility(facilityId, password);
                     sessionStorage.setItem('facilityId', facilityId);
-                    window.location.href = 'home.html';
+                    window.location.href = 'public/home.html';
                 } catch (error) {
                     showError('ログインに失敗しました。施設IDとパスワードを確認してください。');
                 }

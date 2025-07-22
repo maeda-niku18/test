@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ユーザーダッシュボード - ジェビケン</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .nav-tabs {
+            display: flex;
+            border-bottom: 2px solid #ddd;
+            margin-bottom: 20px;
+        }
+        .nav-tab {
+            padding: 10px 20px;
+            background: #f8f9fa;
+            border: none;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+        }
+        .nav-tab.active {
+            background: white;
+            border-bottom-color: #28a745;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .attendance-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .time-display {
+            text-align: center;
+            font-size: 2rem;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .status-display {
+            text-align: center;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        .status-working {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status-break {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .status-off {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .leave-form {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .leave-history {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .leave-item {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        .leave-item:last-child {
+            border-bottom: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="dashboard">
+            <div class="dashboard-header">
+                <h2>ダッシュボード</h2>
+                <div class="user-info">
+                    <span id="userName"></span>
+                    <button onclick="logout()" class="logout-btn">ログアウト</button>
+                </div>
+            </div>
+
+            <div class="nav-tabs">
+                <button class="nav-tab active" onclick="showTab('attendance')">勤怠管理</button>
+                <button class="nav-tab" onclick="showTab('leave-request')">有給申請</button>
+                <button class="nav-tab" onclick="showTab('my-records')">記録確認</button>
+            </div>
+
+            <div id="attendance" class="tab-content active">
+                <div class="attendance-section">
+                    <div class="time-display" id="currentTime"></div>
+                    <div class="status-display" id="statusDisplay">勤務前</div>
+                    
+                    <div class="attendance-buttons">
+                        <button class="attendance-btn start-work" onclick="recordAttendance('start')" id="startBtn">📍 出勤</button>
+                        <button class="attendance-btn break-start" onclick="recordAttendance('breakStart')" id="breakStartBtn" disabled>⏸️ 休憩開始</button>
+                        <button class="attendance-btn break-end" onclick="recordAttendance('breakEnd')" id="breakEndBtn" disabled>▶️ 休憩終了</button>
+                        <button class="attendance-btn end-work" onclick="recordAttendance('end')" id="endBtn" disabled>🏁 退勤</button>
+                    </div>
+                    
+                    <div id="attendanceStatus"></div>
+                </div>
+
+                <div id="todayAttendance">
+                    <h3>本日の勤怠記録</h3>
+                    <div id="todayRecord"></div>
+                </div>
+            </div>
+
+            <div id="leave-request" class="tab-content">
+                <div class="leave-form">
+                    <h3>有給申請</h3>
+                    <form id="leaveRequestForm">
+                        <div class="form-group">
+                            <label for="leaveDate">希望日</label>
+                            <input type="date" id="leaveDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="leaveReason">理由</label>
+                            <textarea id="leaveReason" rows="3" placeholder="有給取得の理由を入力してください" required></textarea>
+                        </div>
+                        <button type="submit" class="admin-btn">申請提出</button>
+                    </form>
+                </div>
+
+                <div id="leaveHistory">
+                    <h3>申請履歴</h3>
+                    <div id="leaveList" class="leave-history">
+                        <!-- 申請履歴がここに表示される -->
+                    </div>
+                </div>
+            </div>
+
+            <div id="my-records" class="tab-content">
+                <h3>勤怠記録</h3>
+                <div style="margin-bottom: 20px;">
+                    <label for="recordMonth">月を選択:</label>
+                    <input type="month" id="recordMonth" value="">
+                    <button onclick="loadMonthlyRecords()" class="admin-btn">表示</button>
+                </div>
+                <div id="monthlyRecords">
+                    <!-- 月別記録がここに表示される -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { JebikenApp } from './firebase-app.js';
+
+        class UserDashboard {
+            constructor() {
+                this.app = new JebikenApp();
+                this.attendanceState = 'off'; // off, working, break
+                this.init();
+            }
+
+            async init() {
+                if (!this.app.requireAuth()) return;
+                
+                const user = this.app.getCurrentUser();
+                document.getElementById('userName').textContent = `${user.name}`;
+                
+                // 現在の月をデフォルトに設定
+                document.getElementById('recordMonth').value = new Date().toISOString().slice(0, 7);
+                
+                this.setupEventListeners();
+                this.startClock();
+                await this.loadLeaveHistory();
+                await this.loadTodayAttendance();
+            }
+
+            setupEventListeners() {
+                document.getElementById('leaveRequestForm').addEventListener('submit', (e) => this.handleLeaveRequest(e));
+            }
+
+            startClock() {
+                const updateClock = () => {
+                    const now = new Date();
+                    document.getElementById('currentTime').textContent = now.toLocaleTimeString('ja-JP');
+                };
+                
+                updateClock();
+                setInterval(updateClock, 1000);
+            }
+
+            async recordAttendance(type) {
+                try {
+                    const now = new Date();
+                    const today = now.toISOString().split('T')[0];
+                    
+                    // 位置情報取得を試行
+                    const position = await this.getCurrentPosition();
+                    
+                    // Firestoreに保存（実装は省略、ローカルストレージで代用）
+                    let todayRecord = JSON.parse(localStorage.getItem(`attendance_${today}`) || '{}');
+                    
+                    switch(type) {
+                        case 'start':
+                            todayRecord.startTime = now.toISOString();
+                            this.attendanceState = 'working';
+                            this.updateButtons();
+                            break;
+                        case 'breakStart':
+                            todayRecord.breakStartTime = now.toISOString();
+                            this.attendanceState = 'break';
+                            this.updateButtons();
+                            break;
+                        case 'breakEnd':
+                            todayRecord.breakEndTime = now.toISOString();
+                            this.attendanceState = 'working';
+                            this.updateButtons();
+                            break;
+                        case 'end':
+                            todayRecord.endTime = now.toISOString();
+                            this.attendanceState = 'off';
+                            this.updateButtons();
+                            break;
+                    }
+                    
+                    // 位置情報を記録（取得失敗時はnullで保存）
+                    todayRecord.location = position;
+                    localStorage.setItem(`attendance_${today}`, JSON.stringify(todayRecord));
+                    
+                    // 成功メッセージを表示
+                    let statusMessage = `${this.getAttendanceTypeText(type)}を記録しました`;
+                    if (position.status === 'success') {
+                        statusMessage += ` (位置情報: ${position.lat.toFixed(4)}, ${position.lng.toFixed(4)})`;
+                    } else {
+                        statusMessage += ` (位置情報: 取得失敗 - ${position.message})`;
+                    }
+                    
+                    this.showAttendanceStatus(statusMessage);
+                    await this.loadTodayAttendance();
+                    
+                } catch (error) {
+                    console.error('勤怠記録エラー:', error);
+                    this.showAttendanceStatus('記録に失敗しました');
+                }
+            }
+
+            async getCurrentPosition() {
+                return new Promise((resolve) => {
+                    if (navigator.geolocation) {
+                        navigator.geolocation.getCurrentPosition(
+                            (position) => {
+                                console.log('GPS取得成功:', position.coords);
+                                resolve({
+                                    lat: position.coords.latitude,
+                                    lng: position.coords.longitude,
+                                    status: 'success',
+                                    message: 'GPS位置情報取得成功'
+                                });
+                            },
+                            (error) => {
+                                console.warn('GPS取得失敗:', error);
+                                let errorMessage = '';
+                                switch(error.code) {
+                                    case error.PERMISSION_DENIED:
+                                        errorMessage = '位置情報の使用が拒否されました';
+                                        break;
+                                    case error.POSITION_UNAVAILABLE:
+                                        errorMessage = '位置情報が利用できません';
+                                        break;
+                                    case error.TIMEOUT:
+                                        errorMessage = '位置情報の取得がタイムアウトしました';
+                                        break;
+                                    default:
+                                        errorMessage = '位置情報の取得に失敗しました';
+                                        break;
+                                }
+                                resolve({ 
+                                    lat: null, 
+                                    lng: null, 
+                                    status: 'failed',
+                                    message: errorMessage
+                                });
+                            },
+                            {
+                                enableHighAccuracy: true,
+                                timeout: 10000,
+                                maximumAge: 60000
+                            }
+                        );
+                    } else {
+                        resolve({ 
+                            lat: null, 
+                            lng: null, 
+                            status: 'not_supported',
+                            message: 'このブラウザは位置情報をサポートしていません'
+                        });
+                    }
+                });
+            }
+
+            updateButtons() {
+                const startBtn = document.getElementById('startBtn');
+                const breakStartBtn = document.getElementById('breakStartBtn');
+                const breakEndBtn = document.getElementById('breakEndBtn');
+                const endBtn = document.getElementById('endBtn');
+                const statusDisplay = document.getElementById('statusDisplay');
+
+                // 全ボタンを無効化
+                [startBtn, breakStartBtn, breakEndBtn, endBtn].forEach(btn => {
+                    btn.disabled = true;
+                });
+
+                // 状態に応じてボタンを有効化
+                switch(this.attendanceState) {
+                    case 'off':
+                        startBtn.disabled = false;
+                        statusDisplay.textContent = '勤務前';
+                        statusDisplay.className = 'status-display status-off';
+                        break;
+                    case 'working':
+                        breakStartBtn.disabled = false;
+                        endBtn.disabled = false;
+                        statusDisplay.textContent = '勤務中';
+                        statusDisplay.className = 'status-display status-working';
+                        break;
+                    case 'break':
+                        breakEndBtn.disabled = false;
+                        statusDisplay.textContent = '休憩中';
+                        statusDisplay.className = 'status-display status-break';
+                        break;
+                }
+            }
+
+            getAttendanceTypeText(type) {
+                const typeMap = {
+                    'start': '出勤',
+                    'breakStart': '休憩開始',
+                    'breakEnd': '休憩終了',
+                    'end': '退勤'
+                };
+                return typeMap[type];
+            }
+
+            showAttendanceStatus(message) {
+                const statusDiv = document.getElementById('attendanceStatus');
+                statusDiv.innerHTML = `<p style="color: green; font-weight: bold;">${message}</p>`;
+                setTimeout(() => {
+                    statusDiv.innerHTML = '';
+                }, 3000);
+            }
+
+            async loadTodayAttendance() {
+                const today = new Date().toISOString().split('T')[0];
+                const todayRecord = JSON.parse(localStorage.getItem(`attendance_${today}`) || '{}');
+                const recordDiv = document.getElementById('todayRecord');
+
+                if (Object.keys(todayRecord).length === 0) {
+                    recordDiv.innerHTML = '<p>本日の記録はありません</p>';
+                    return;
+                }
+
+                let html = '<div style="border: 1px solid #ddd; padding: 15px; border-radius: 5px;">';
+                
+                if (todayRecord.startTime) {
+                    html += `<p><strong>出勤:</strong> ${new Date(todayRecord.startTime).toLocaleTimeString('ja-JP')}</p>`;
+                    this.attendanceState = 'working';
+                }
+                if (todayRecord.breakStartTime) {
+                    html += `<p><strong>休憩開始:</strong> ${new Date(todayRecord.breakStartTime).toLocaleTimeString('ja-JP')}</p>`;
+                    this.attendanceState = 'break';
+                }
+                if (todayRecord.breakEndTime) {
+                    html += `<p><strong>休憩終了:</strong> ${new Date(todayRecord.breakEndTime).toLocaleTimeString('ja-JP')}</p>`;
+                    this.attendanceState = 'working';
+                }
+                if (todayRecord.endTime) {
+                    html += `<p><strong>退勤:</strong> ${new Date(todayRecord.endTime).toLocaleTimeString('ja-JP')}</p>`;
+                    this.attendanceState = 'off';
+                }
+
+                // 位置情報の表示
+                if (todayRecord.location) {
+                    if (todayRecord.location.status === 'success') {
+                        html += `<p><strong>📍 位置情報:</strong> ${todayRecord.location.lat.toFixed(4)}, ${todayRecord.location.lng.toFixed(4)}</p>`;
+                    } else {
+                        html += `<p><strong>❌ 位置情報:</strong> 取得失敗 (${todayRecord.location.message})</p>`;
+                    }
+                }
+
+                html += '</div>';
+                recordDiv.innerHTML = html;
+                this.updateButtons();
+            }
+
+            async handleLeaveRequest(e) {
+                e.preventDefault();
+                
+                const date = document.getElementById('leaveDate').value;
+                const reason = document.getElementById('leaveReason').value;
+
+                try {
+                    await this.app.submitLeaveRequest(date, reason);
+                    alert('有給申請を提出しました');
+                    
+                    // フォームをリセット
+                    document.getElementById('leaveRequestForm').reset();
+                    
+                    // 申請履歴を更新
+                    await this.loadLeaveHistory();
+                } catch (error) {
+                    alert('申請に失敗しました: ' + error.message);
+                }
+            }
+
+            async loadLeaveHistory() {
+                try {
+                    const user = this.app.getCurrentUser();
+                    const requests = await this.app.getLeaveRequests(user.id);
+                    const leaveList = document.getElementById('leaveList');
+
+                    if (requests.length === 0) {
+                        leaveList.innerHTML = '<p>申請履歴はありません</p>';
+                        return;
+                    }
+
+                    leaveList.innerHTML = requests.map(request => `
+                        <div class="leave-item">
+                            <h4>${request.date}</h4>
+                            <p><strong>理由:</strong> ${request.reason}</p>
+                            <p><strong>申請日時:</strong> ${new Date(request.requestedAt).toLocaleString('ja-JP')}</p>
+                            <p><strong>状態:</strong> ${request.approved ? '✅ 承認済み' : '⏳ 未承認'}</p>
+                        </div>
+                    `).join('');
+                } catch (error) {
+                    console.error('申請履歴読み込みエラー:', error);
+                }
+            }
+        }
+
+        const dashboard = new UserDashboard();
+
+        // グローバル関数
+        window.showTab = function(tabId) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
+            
+            document.getElementById(tabId).classList.add('active');
+            event.target.classList.add('active');
+        };
+
+        window.recordAttendance = function(type) {
+            dashboard.recordAttendance(type);
+        };
+
+        window.logout = function() {
+            dashboard.app.logout();
+        };
+
+        window.loadMonthlyRecords = function() {
+            alert('月別記録機能は簡易版のため省略されています');
+        };
+    </script>
+</body>
+</html>

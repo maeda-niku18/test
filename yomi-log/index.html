@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YomiLog（よみログ）</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/@zxing/library@0.20.0/umd/index.min.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- ホーム画面 -->
+        <div id="home-screen" class="screen">
+            <header>
+                <h1>📚 YomiLog</h1>
+                <p>読み聞かせ記録アプリ</p>
+            </header>
+            
+            <main>
+                <div class="character-container">
+                    <img id="character-image" src="image/level1.png" alt="キャラクター">
+                    <div class="character-info">
+                        <h2 id="character-name">卵</h2>
+                        <p>レベル: <span id="current-level">1</span></p>
+                        <p>読んだ本: <span id="total-books">0</span>冊</p>
+                        <div class="progress-bar">
+                            <div id="progress-fill" class="progress-fill"></div>
+                        </div>
+                        <p class="next-level">次のレベルまで: <span id="books-to-next">5</span>冊</p>
+                    </div>
+                </div>
+                
+                <div class="action-buttons">
+                    <button id="scan-book-btn" class="primary-btn">📖 本を読んだ！</button>
+                    <button id="show-log-btn" class="secondary-btn">📋 読書ログ</button>
+                    <button id="manual-input-btn" class="tertiary-btn">✏️ 手動入力</button>
+                    <button id="title-search-btn" class="tertiary-btn">🔍 タイトル検索</button>
+                </div>
+            </main>
+        </div>
+
+        <!-- 書籍登録画面 -->
+        <div id="book-registration-screen" class="screen hidden">
+            <header>
+                <button id="back-to-home" class="back-btn">← 戻る</button>
+                <h1>本の登録</h1>
+            </header>
+            
+            <main>
+                <!-- カメラスキャン部分 -->
+                <div id="scanner-container">
+                    <div id="scanner-status">📷 ISBNバーコードを読み取り中...</div>
+                    <video id="scanner-video" autoplay playsinline></video>
+                    <canvas id="scanner-canvas" class="hidden"></canvas>
+                </div>
+                
+                <!-- 手動入力部分 -->
+                <div id="manual-input-container" class="hidden">
+                    <label for="manual-isbn">ISBN（13桁）：</label>
+                    <input type="text" id="manual-isbn" placeholder="9784567890123" maxlength="13">
+                    <button id="search-book-btn">本を検索</button>
+                </div>
+                
+                <!-- タイトル検索部分 -->
+                <div id="title-search-container" class="hidden">
+                    <label for="title-search-input">本のタイトル：</label>
+                    <input type="text" id="title-search-input" placeholder="ぐりとぐら">
+                    <button id="search-title-btn">タイトルで検索</button>
+                </div>
+                
+                <!-- 検索結果一覧部分 -->
+                <div id="search-results-container" class="hidden">
+                    <div class="section-header">
+                        <button id="back-to-title-search" class="back-btn">← 検索に戻る</button>
+                        <h3>検索結果</h3>
+                    </div>
+                    <div id="search-results-list">
+                        <!-- 検索結果がここに動的に追加される -->
+                    </div>
+                </div>
+                
+                <!-- 書籍情報表示部分 -->
+                <div id="book-info-container" class="hidden">
+                    <button id="back-to-search-results" class="back-btn hidden">← 検索結果に戻る</button>
+                    <div class="book-card">
+                        <img id="book-thumbnail" src="" alt="書籍画像">
+                        <div class="book-details">
+                            <h3 id="book-title"></h3>
+                            <p id="book-author"></p>
+                            <p id="book-isbn"></p>
+                        </div>
+                    </div>
+                    <button id="register-book-btn" class="primary-btn">✅ 読んだ本として登録</button>
+                </div>
+                
+                <div id="loading" class="hidden">
+                    <p>📚 書籍情報を取得中...</p>
+                </div>
+                
+                <div id="error-message" class="hidden error">
+                    <p>❌ 書籍情報が見つかりませんでした</p>
+                </div>
+            </main>
+        </div>
+
+        <!-- 読書ログ画面 -->
+        <div id="log-screen" class="screen hidden">
+            <header>
+                <button id="back-to-home-from-log" class="back-btn">← 戻る</button>
+                <h1>📋 読書ログ</h1>
+            </header>
+            
+            <main>
+                <div id="log-stats">
+                    <p>総読書数: <span id="log-total-books">0</span>冊</p>
+                    <p>ユニーク本数: <span id="log-unique-books">0</span>冊</p>
+                </div>
+                
+                <div id="log-list">
+                    <!-- 読書ログがここに動的に追加される -->
+                </div>
+                
+                <div id="no-logs" class="hidden">
+                    <p>📖 まだ読んだ本がありません</p>
+                    <p>本を読んで記録を始めましょう！</p>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

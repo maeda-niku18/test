@@ -77,7 +77,7 @@
         function checkAuth() {
             const facilityId = sessionStorage.getItem('facilityId');
             if (!facilityId) {
-                window.location.href = 'index.html';
+                window.location.href = '../index.html';
                 return;
             }
         }
@@ -202,7 +202,7 @@
 
         window.logout = function() {
             sessionStorage.removeItem('facilityId');
-            window.location.href = 'index.html';
+            window.location.href = '../index.html';
         }
     </script>
 </body>
